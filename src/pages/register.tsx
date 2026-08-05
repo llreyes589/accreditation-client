@@ -87,6 +87,7 @@ export function RegisterInstitutionPage() {
         email: String(f.get("email")),
         password: String(f.get("password")),
         password_confirmation: String(f.get("password_confirmation")),
+        username: String(f.get("username")),
         phone: String(f.get("phone") || ""),
         telegram_handle: String(f.get("telegram_handle") || ""),
       })
@@ -122,6 +123,7 @@ export function RegisterInstitutionPage() {
           <p className="label-caps pt-2">Training Officer Account</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full Name" error={fieldError("name")}><Input name="name" required /></Field>
+            <Field label="Username" error={fieldError("username")}><Input name="username" required autoComplete="username" /></Field>
             <Field label="Email" error={fieldError("email")}><Input name="email" type="email" required /></Field>
             <Field label="Password" error={fieldError("password")}>
               <Input name="password" type="password" minLength={8} required />
@@ -163,6 +165,7 @@ export function RegisterResidentPage() {
         password: String(f.get("password")),
         password_confirmation: String(f.get("password_confirmation")),
         track: String(f.get("track")) as Track,
+        username: String(f.get("username")),
         date_accepted: String(f.get("date_accepted") || "") || undefined,
         age_at_enrollment: f.get("age_at_enrollment")
           ? Number(f.get("age_at_enrollment"))
@@ -200,6 +203,7 @@ export function RegisterResidentPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full Name" error={fieldError("name")}><Input name="name" required /></Field>
+            <Field label="Username" error={fieldError("username")}><Input name="username" required autoComplete="username" /></Field>
             <Field label="Email" error={fieldError("email")}><Input name="email" type="email" required /></Field>
             <Field label="Password" error={fieldError("password")}>
               <Input name="password" type="password" minLength={8} required />

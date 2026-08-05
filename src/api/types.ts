@@ -62,6 +62,7 @@ export interface Resident {
 export interface User {
   id: number
   name: string
+  username: string | null
   email: string
   status: UserStatus
   email_verified_at: string | null

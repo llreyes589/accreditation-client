@@ -34,6 +34,7 @@ export const listPublicInstitutions = () => api<Institution[]>("/institutions");
 export const registerInstitution = (payload: {
   institution: { name: string; address?: string; hospital_level?: string };
   name: string;
+  username: string;
   email: string;
   password: string;
   password_confirmation: string;
@@ -47,6 +48,7 @@ export const registerInstitution = (payload: {
 export const registerResident = (payload: {
   institution_id: number;
   name: string;
+  username: string;
   email: string;
   password: string;
   password_confirmation: string;
@@ -179,6 +181,7 @@ export const listTrainingOfficers = () =>
 
 export const createTrainingOfficer = (payload: {
   name: string;
+  username: string;
   email: string;
   password: string;
   phone?: string;
@@ -190,6 +193,7 @@ export const listResidents = () => api<Resident[]>("/residents");
 
 export const createResident = (payload: {
   name: string;
+  username: string;
   email: string;
   password: string;
   track: Track;
@@ -251,6 +255,7 @@ export const adminPending = () => api<AdminPending>("/admin/pending");
 
 export const createStaff = (payload: {
   name: string;
+  username: string;
   email: string;
   password: string;
   role: "Admin" | "Accreditor";

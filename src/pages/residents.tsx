@@ -143,6 +143,7 @@ function CreateResidentDialog() {
             try {
               await mut.mutateAsync({
                 name: String(f.get("name")),
+                username: String(f.get("username")),
                 email: String(f.get("email")),
                 password: String(f.get("password")),
                 track: String(f.get("track")) as Track,
@@ -157,6 +158,7 @@ function CreateResidentDialog() {
         >
           {err && <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">{err}</p>}
           <div className="space-y-1.5"><Label>Name</Label><Input name="name" required /></div>
+          <div className="space-y-1.5"><Label>Username</Label><Input name="username" required /></div>
           <div className="space-y-1.5"><Label>Email</Label><Input name="email" type="email" required /></div>
           <div className="space-y-1.5"><Label>Password</Label><Input name="password" type="password" minLength={8} required /></div>
           <div className="grid gap-3 sm:grid-cols-2">

@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser({
           id: 0,
           name: "",
+          username: null,
           email: "",
           status: p.status,
           email_verified_at: p.email_verified ? new Date().toISOString() : null,
