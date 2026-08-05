@@ -1,31 +1,32 @@
-import * as React from "react"
-import { useNavigate, Link } from "react-router-dom"
-import { ShieldCheck, Lock, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input, Label } from "@/components/ui/input"
-import { useAuth } from "@/context/auth"
-import { ApiError } from "@/api/client"
+import * as React from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { ShieldCheck, Lock, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input, Label } from "@/components/ui/input";
+import { useAuth } from "@/context/auth";
+import { ApiError } from "@/api/client";
 
 export default function LoginPage() {
-  const nav = useNavigate()
-  const { signIn } = useAuth()
-  const [email, setEmail] = React.useState("")
-  const [password, setPassword] = React.useState("")
-  const [error, setError] = React.useState<string | null>(null)
-  const [busy, setBusy] = React.useState(false)
+  const nav = useNavigate();
+  const { signIn } = useAuth();
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setBusy(true)
-    setError(null)
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
     try {
-      const user = await signIn(email, password)
-      if (user.status !== "approved" || !user.email_verified_at) nav("/pending")
-      else nav("/")
+      const user = await signIn(username, password);
+      if (user.status !== "approved" || !user.email_verified_at)
+        nav("/pending");
+      else nav("/");
     } catch (err) {
-      setError(err instanceof ApiError ? err.firstError : "Unable to sign in.")
+      setError(err instanceof ApiError ? err.firstError : "Unable to sign in.");
     } finally {
-      setBusy(false)
+      setBusy(false);
     }
   }
 
@@ -33,7 +34,9 @@ export default function LoginPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="hidden flex-col justify-between bg-navy p-10 text-white lg:flex">
         <div className="flex items-center gap-2.5">
-          <div className="grid size-9 place-items-center rounded bg-brand text-sm font-bold">PSP</div>
+          <div className="grid size-9 place-items-center rounded bg-brand text-sm font-bold">
+            PSP
+          </div>
           <span className="font-display font-bold">Accreditation Manager</span>
         </div>
         <div>
@@ -41,11 +44,13 @@ export default function LoginPage() {
             An unbreakable record of training truth.
           </h1>
           <p className="mt-4 max-w-md text-[15px] text-slate-300">
-            Institution accreditation, resident training, rotations, case logs and promotion
-            decisions — governed in one auditable system.
+            Institution accreditation, resident training, rotations, case logs
+            and promotion decisions — governed in one auditable system.
           </p>
         </div>
-        <p className="text-[11px] text-slate-500">© 2026 Philippine Society of Pathologists</p>
+        <p className="text-[11px] text-slate-500">
+          © 2026 Philippine Society of Pathologists
+        </p>
       </div>
 
       <div className="flex items-center justify-center bg-canvas p-6">
@@ -55,10 +60,14 @@ export default function LoginPage() {
         >
           <div className="flex items-center gap-2 text-brand lg:hidden">
             <ShieldCheck className="size-5" />
-            <span className="font-display font-bold text-ink">PSP Accreditation Manager</span>
+            <span className="font-display font-bold text-ink">
+              PSP Accreditation Manager
+            </span>
           </div>
           <div>
-            <h2 className="font-display text-2xl font-bold tracking-tight">Sign in</h2>
+            <h2 className="font-display text-2xl font-bold tracking-tight">
+              Sign in
+            </h2>
             <p className="mt-1 text-[13px] text-slate-500">
               Use your registered institutional email.
             </p>
@@ -71,14 +80,14 @@ export default function LoginPage() {
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="username">Username</Label>
             <Input
-              id="email"
-              type="email"
+              id="username"
+              type="username"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
             />
           </div>
           <div className="space-y-1.5">
@@ -101,13 +110,19 @@ export default function LoginPage() {
           <div className="space-y-1 text-center text-[12px] text-slate-500">
             <p>
               Institution not yet registered?{" "}
-              <Link className="font-semibold text-brand hover:underline" to="/register/institution">
+              <Link
+                className="font-semibold text-brand hover:underline"
+                to="/register/institution"
+              >
                 Register institution
               </Link>
             </p>
             <p>
               Resident?{" "}
-              <Link className="font-semibold text-brand hover:underline" to="/register/resident">
+              <Link
+                className="font-semibold text-brand hover:underline"
+                to="/register/resident"
+              >
                 Register as resident
               </Link>
             </p>
@@ -115,5 +130,5 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }
