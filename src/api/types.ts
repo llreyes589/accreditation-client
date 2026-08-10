@@ -6,7 +6,7 @@
 export type Track = "AP" | "CP" | "AP_CP"
 export type UserStatus = "pending" | "approved" | "rejected"
 export type RegistrationStatus = "pending" | "approved" | "rejected"
-export type RoleName = "Admin" | "Accreditor" | "TrainingOfficer" | "Resident"
+export type RoleName = "Admin" | "Accreditor" | "TrainingInstitution" | "TrainingOfficer" | "Resident"
 
 export interface Role {
   id: number
@@ -18,6 +18,7 @@ export interface Institution {
   name: string
   address: string | null
   hospital_level: string | null
+  user_id?: number | null
   registration_status?: RegistrationStatus
   approved_at?: string | null
   approved_by?: number | null

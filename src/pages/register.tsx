@@ -100,7 +100,7 @@ export function RegisterInstitutionPage() {
   return (
     <Shell
       title="Register Training Institution"
-      subtitle="Creates the institution and its first Training Officer account. Both require email verification and Admin approval."
+      subtitle="Creates the institution and its owner account. Verify your email and wait for Admin approval. Add Training Officers afterward."
     >
       {done ? (
         <Success message={done} />
@@ -120,7 +120,7 @@ export function RegisterInstitutionPage() {
             </Field>
           </div>
 
-          <p className="label-caps pt-2">Training Officer Account</p>
+          <p className="label-caps pt-2">Owner Account</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full Name" error={fieldError("name")}><Input name="name" required /></Field>
             <Field label="Username" error={fieldError("username")}><Input name="username" required autoComplete="username" /></Field>

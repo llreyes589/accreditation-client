@@ -27,7 +27,7 @@ type NavItem = {
   roles: RoleName[]
 }
 
-const TO: RoleName[] = ["TrainingOfficer"]
+const TO: RoleName[] = ["TrainingOfficer", "TrainingInstitution"]
 const ADMIN: RoleName[] = ["Admin"]
 const ALL: RoleName[] = ["Admin", "Accreditor", "TrainingOfficer", "Resident"]
 

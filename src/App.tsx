@@ -57,7 +57,7 @@ function PublicOnly({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
-const TO: RoleName[] = ["TrainingOfficer"]
+const TO: RoleName[] = ["TrainingOfficer", "TrainingInstitution"]
 const ADMIN: RoleName[] = ["Admin"]
 
 function Router() {
