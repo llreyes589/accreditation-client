@@ -18,6 +18,13 @@ export interface Institution {
   name: string
   address: string | null
   hospital_level: string | null
+  laboratory_level?: string | null
+  bsf_category?: string | null
+  director?: string | null
+  chairman?: string | null
+  contact_number?: string | null
+  email?: string | null
+  year_program_opened?: number | null
   user_id?: number | null
   registration_status?: RegistrationStatus
   approved_at?: string | null

@@ -9,6 +9,7 @@ import type { RoleName } from "@/api/types"
 import DashboardPage from "@/pages/dashboard"
 import ApprovalsPage from "@/pages/approvals"
 import InstitutionsPage from "@/pages/institutions"
+import InstitutionProfilePage from "@/pages/institution-profile"
 import AccreditationPage from "@/pages/accreditation"
 import ResidentsPage from "@/pages/residents"
 import TrainingOfficersPage from "@/pages/training-officers"
@@ -71,6 +72,7 @@ function Router() {
       <Route element={<Protected><AppShell /></Protected>}>
         <Route index element={<DashboardPage />} />
         <Route path="institutions" element={<InstitutionsPage />} />
+        <Route path="institution-profile" element={<Protected roles={TO}><InstitutionProfilePage /></Protected>} />
         <Route path="approvals" element={<Protected roles={ADMIN}><ApprovalsPage /></Protected>} />
         <Route path="settings" element={<Protected roles={ADMIN}><SettingsPage /></Protected>} />
         <Route path="accreditation" element={<Protected roles={TO}><AccreditationPage /></Protected>} />

@@ -82,6 +82,15 @@ export function RegisterInstitutionPage() {
           name: String(f.get("inst_name")),
           address: String(f.get("address") || ""),
           hospital_level: String(f.get("hospital_level") || ""),
+          laboratory_level: String(f.get("laboratory_level") || ""),
+          bsf_category: String(f.get("bsf_category") || ""),
+          director: String(f.get("director") || ""),
+          chairman: String(f.get("chairman") || ""),
+          contact_number: String(f.get("contact_number") || ""),
+          email: String(f.get("inst_email") || ""),
+          year_program_opened: f.get("year_program_opened")
+            ? Number(f.get("year_program_opened"))
+            : undefined,
         },
         name: String(f.get("name")),
         email: String(f.get("email")),
@@ -117,6 +126,27 @@ export function RegisterInstitutionPage() {
             </Field>
             <Field label="Hospital Level" error={fieldError("institution.hospital_level")}>
               <Input name="hospital_level" placeholder="e.g. Level 3" />
+            </Field>
+            <Field label="Laboratory Level" error={fieldError("institution.laboratory_level")}>
+              <Input name="laboratory_level" placeholder="e.g. Lab 2" />
+            </Field>
+            <Field label="BSF Category" error={fieldError("institution.bsf_category")}>
+              <Input name="bsf_category" placeholder="e.g. A" />
+            </Field>
+            <Field label="Director / Hospital Chief" error={fieldError("institution.director")}>
+              <Input name="director" />
+            </Field>
+            <Field label="Chairman" error={fieldError("institution.chairman")}>
+              <Input name="chairman" />
+            </Field>
+            <Field label="Contact Number" error={fieldError("institution.contact_number")}>
+              <Input name="contact_number" />
+            </Field>
+            <Field label="Institution Email" error={fieldError("institution.email")}>
+              <Input name="inst_email" type="email" />
+            </Field>
+            <Field label="Year Program Opened" error={fieldError("institution.year_program_opened")}>
+              <Input name="year_program_opened" type="number" min={1900} max={2100} />
             </Field>
           </div>
 

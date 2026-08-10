@@ -35,6 +35,7 @@ export const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ALL },
   { to: "/approvals", label: "Approvals", icon: ShieldCheck, roles: ADMIN },
   { to: "/institutions", label: "Institutions", icon: Building2, roles: ALL },
+  { to: "/institution-profile", label: "Institution Profile", icon: Building2, roles: TO },
   { to: "/accreditation", label: "Accreditation", icon: FileText, roles: TO },
   { to: "/residents", label: "Residents", icon: Users, roles: TO },
   { to: "/training-officers", label: "Training Officers", icon: UserCog, roles: TO },

@@ -21,6 +21,7 @@ export const qk = {
   residents: ["residents"],
   transfers: ["transfers", "incoming"],
   rotations: ["rotations"],
+  institutionProfile: ["institution-profile"],
   adminPending: ["admin", "pending"],
 }
 
@@ -77,6 +78,9 @@ export const useIncomingTransfers = (enabled = true) =>
 
 export const useRotations = (enabled = true) =>
   useQuery({ queryKey: qk.rotations, queryFn: ep.listRotations, enabled })
+
+export const useInstitutionProfile = (enabled = true) =>
+  useQuery({ queryKey: qk.institutionProfile, queryFn: ep.getInstitutionProfile, enabled, retry: false })
 
 export const useAdminPending = (enabled = true) =>
   useQuery({ queryKey: qk.adminPending, queryFn: ep.adminPending, enabled })
@@ -140,6 +144,9 @@ export const useCreateTrainingOfficer = () =>
 
 export const useCreateResident = () =>
   useInvalidating(ep.createResident, [qk.residents, qk.dashboard])
+
+export const useUpdateInstitutionProfile = () =>
+  useInvalidating(ep.updateInstitutionProfile, [qk.institutionProfile, qk.dashboard, qk.me])
 
 export const useRequestTransfer = () =>
   useInvalidating(

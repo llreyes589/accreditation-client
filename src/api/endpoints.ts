@@ -32,7 +32,18 @@ import type {
 export const listPublicInstitutions = () => api<Institution[]>("/institutions");
 
 export const registerInstitution = (payload: {
-  institution: { name: string; address?: string; hospital_level?: string };
+  institution: {
+    name: string;
+    address?: string;
+    hospital_level?: string;
+    laboratory_level?: string;
+    bsf_category?: string;
+    director?: string;
+    chairman?: string;
+    contact_number?: string;
+    email?: string;
+    year_program_opened?: number;
+  };
   name: string;
   username: string;
   email: string;
@@ -44,6 +55,22 @@ export const registerInstitution = (payload: {
   api<{ message: string; user: User }>("/register/institution", {
     body: payload,
   });
+
+export const getInstitutionProfile = () =>
+  api<Institution>("/institution-profile");
+
+export const updateInstitutionProfile = (payload: {
+  name: string;
+  address?: string;
+  hospital_level?: string;
+  laboratory_level?: string;
+  bsf_category?: string;
+  director?: string;
+  chairman?: string;
+  contact_number?: string;
+  email?: string;
+  year_program_opened?: number;
+}) => api<Institution>("/institution-profile", { method: "PUT", body: payload });
 
 export const registerResident = (payload: {
   institution_id: number;
