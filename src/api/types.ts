@@ -13,6 +13,11 @@ export interface Role {
   name: RoleName
 }
 
+export interface PsgcOption {
+  code: string
+  name: string
+}
+
 export interface Institution {
   id: number
   name: string
@@ -25,6 +30,9 @@ export interface Institution {
   contact_number?: string | null
   email?: string | null
   year_program_opened?: number | null
+  region?: string | null
+  province?: string | null
+  city?: string | null
   user_id?: number | null
   registration_status?: RegistrationStatus
   approved_at?: string | null

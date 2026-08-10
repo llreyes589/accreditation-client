@@ -2,9 +2,9 @@ import * as React from "react"
 import { Save, Loader2, CheckCircle2 } from "lucide-react"
 import { PageHeader } from "@/components/shared"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input, Label } from "@/components/ui/input"
+import { Input, Label, Select } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useInstitutionProfile, useUpdateInstitutionProfile } from "@/api/hooks"
+import { useInstitutionProfile, useUpdateInstitutionProfile, usePsgcRegions, usePsgcProvinces, usePsgcCities } from "@/api/hooks"
 import { ApiError } from "@/api/client"
 import type { Institution } from "@/api/types"
 
@@ -19,12 +19,16 @@ export default function InstitutionProfilePage() {
     if (q.data) setForm(q.data)
   }, [q.data])
 
+  const regions = usePsgcRegions()
+  const provinces = usePsgcProvinces(form?.region || undefined)
+  const cities = usePsgcCities(form?.province || undefined)
+
   if (q.isLoading) return <p className="text-slate-500">Loading profile…</p>
   if (q.error) return <p className="text-red-600">Failed to load institution profile.</p>
   if (!form) return null
 
-  function set<K extends keyof Institution>(key: K, value: Institution[K]) {
-    setForm((f) => (f ? { ...f, [key]: value } : f))
+  function set<K extends keyof Institution>(key: K, value: Institution[K], reset?: Partial<Institution>) {
+    setForm((f) => (f ? { ...f, [key]: value, ...reset } : f))
   }
 
   async function save() {
@@ -43,6 +47,9 @@ export default function InstitutionProfilePage() {
         contact_number: form.contact_number ?? undefined,
         email: form.email ?? undefined,
         year_program_opened: form.year_program_opened ?? undefined,
+        region: form.region ?? undefined,
+        province: form.province ?? undefined,
+        city: form.city ?? undefined,
       })
       setOk(true)
     } catch (e) {
@@ -113,6 +120,41 @@ export default function InstitutionProfilePage() {
                 value={form.year_program_opened ?? ""}
                 onChange={(e) => set("year_program_opened", e.target.value ? Number(e.target.value) : null)}
               />
+            </Field>
+            <Field label="Region">
+              <Select
+                value={form.region ?? ""}
+                onChange={(e) => set("region", e.target.value || null, { province: null, city: null })}
+              >
+                <option value="">{regions.isLoading ? "Loading…" : "Select region"}</option>
+                {(regions.data ?? []).map((o) => (
+                  <option key={o.code} value={o.code}>{o.name}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Province">
+              <Select
+                value={form.province ?? ""}
+                disabled={!form.region}
+                onChange={(e) => set("province", e.target.value || null, { city: null })}
+              >
+                <option value="">{form.region ? (provinces.isLoading ? "Loading…" : "Select province") : "Select region first"}</option>
+                {(provinces.data ?? []).map((o) => (
+                  <option key={o.code} value={o.code}>{o.name}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="City">
+              <Select
+                value={form.city ?? ""}
+                disabled={!form.province}
+                onChange={(e) => set("city", e.target.value || null)}
+              >
+                <option value="">{form.province ? (cities.isLoading ? "Loading…" : "Select city") : "Select province first"}</option>
+                {(cities.data ?? []).map((o) => (
+                  <option key={o.code} value={o.code}>{o.name}</option>
+                ))}
+              </Select>
             </Field>
           </div>
         </CardContent>

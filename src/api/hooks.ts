@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import * as ep from "./endpoints"
 import type { ChecklistItem, Track } from "./types"
 
@@ -22,6 +22,7 @@ export const qk = {
   transfers: ["transfers", "incoming"],
   rotations: ["rotations"],
   institutionProfile: ["institution-profile"],
+  psgcRegions: ["psgc", "regions"],
   adminPending: ["admin", "pending"],
 }
 
@@ -72,6 +73,27 @@ export const useTrainingOfficers = (enabled = true) =>
 
 export const useResidents = (enabled = true) =>
   useQuery({ queryKey: qk.residents, queryFn: ep.listResidents, enabled })
+
+export const usePsgcRegions = (enabled = true) =>
+  useQuery({ queryKey: qk.psgcRegions, queryFn: ep.getPsgcRegions, enabled })
+
+export function usePsgcProvinces(regionCode: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ["psgc", "provinces", regionCode ?? ""],
+    queryFn: () => ep.getPsgcProvinces(regionCode as string),
+    enabled: enabled && !!regionCode,
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function usePsgcCities(provinceCode: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ["psgc", "cities", provinceCode ?? ""],
+    queryFn: () => ep.getPsgcCities(provinceCode as string),
+    enabled: enabled && !!provinceCode,
+    placeholderData: keepPreviousData,
+  })
+}
 
 export const useIncomingTransfers = (enabled = true) =>
   useQuery({ queryKey: qk.transfers, queryFn: ep.incomingTransfers, enabled })

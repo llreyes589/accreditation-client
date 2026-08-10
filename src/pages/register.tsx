@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { Loader2, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input, Label, Select } from "@/components/ui/input"
-import { useRegisterInstitution, useRegisterResident, usePublicInstitutions } from "@/api/hooks"
+import { useRegisterInstitution, useRegisterResident, usePublicInstitutions, usePsgcRegions, usePsgcProvinces, usePsgcCities } from "@/api/hooks"
 import { ApiError } from "@/api/client"
 import type { Track } from "@/api/types"
 
@@ -71,6 +71,13 @@ export function RegisterInstitutionPage() {
   const mut = useRegisterInstitution()
   const { error, setError, fieldError } = useFormError()
   const [done, setDone] = React.useState<string | null>(null)
+  const [region, setRegion] = React.useState("")
+  const [province, setProvince] = React.useState("")
+  const [city, setCity] = React.useState("")
+
+  const regions = usePsgcRegions()
+  const provinces = usePsgcProvinces(region || undefined)
+  const cities = usePsgcCities(province || undefined)
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -91,6 +98,9 @@ export function RegisterInstitutionPage() {
           year_program_opened: f.get("year_program_opened")
             ? Number(f.get("year_program_opened"))
             : undefined,
+          region: region || undefined,
+          province: province || undefined,
+          city: city || undefined,
         },
         name: String(f.get("name")),
         email: String(f.get("email")),
@@ -147,6 +157,48 @@ export function RegisterInstitutionPage() {
             </Field>
             <Field label="Year Program Opened" error={fieldError("institution.year_program_opened")}>
               <Input name="year_program_opened" type="number" min={1900} max={2100} />
+            </Field>
+            <Field label="Region" error={fieldError("institution.region")}>
+              <Select
+                value={region}
+                onChange={(e) => {
+                  setRegion(e.target.value)
+                  setProvince("")
+                  setCity("")
+                }}
+              >
+                <option value="">{regions.isLoading ? "Loading…" : "Select region"}</option>
+                {(regions.data ?? []).map((o) => (
+                  <option key={o.code} value={o.code}>{o.name}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Province" error={fieldError("institution.province")}>
+              <Select
+                value={province}
+                disabled={!region}
+                onChange={(e) => {
+                  setProvince(e.target.value)
+                  setCity("")
+                }}
+              >
+                <option value="">{region ? (provinces.isLoading ? "Loading…" : "Select province") : "Select region first"}</option>
+                {(provinces.data ?? []).map((o) => (
+                  <option key={o.code} value={o.code}>{o.name}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="City" error={fieldError("institution.city")}>
+              <Select
+                value={city}
+                disabled={!province}
+                onChange={(e) => setCity(e.target.value)}
+              >
+                <option value="">{province ? (cities.isLoading ? "Loading…" : "Select city") : "Select province first"}</option>
+                {(cities.data ?? []).map((o) => (
+                  <option key={o.code} value={o.code}>{o.name}</option>
+                ))}
+              </Select>
             </Field>
           </div>
 
