@@ -3,9 +3,10 @@ import { Link } from "react-router-dom"
 import { Loader2, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input, Label, Select } from "@/components/ui/input"
-import { useRegisterInstitution, useRegisterResident, usePublicInstitutions, usePsgcRegions, usePsgcProvinces, usePsgcCities } from "@/api/hooks"
+import { PlacesSearchBox } from "@/components/PlacesSearchBox"
+import { useRegisterInstitution, useRegisterResident, usePublicInstitutions } from "@/api/hooks"
 import { ApiError } from "@/api/client"
-import type { Track } from "@/api/types"
+import type { Track, PlacesResult } from "@/api/types"
 
 function Shell({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
@@ -71,13 +72,23 @@ export function RegisterInstitutionPage() {
   const mut = useRegisterInstitution()
   const { error, setError, fieldError } = useFormError()
   const [done, setDone] = React.useState<string | null>(null)
+  const [lat, setLat] = React.useState<number | null>(null)
+  const [lng, setLng] = React.useState<number | null>(null)
+  const [address, setAddress] = React.useState("")
+  // derived from the selected place's address details
   const [region, setRegion] = React.useState("")
-  const [province, setProvince] = React.useState("")
   const [city, setCity] = React.useState("")
 
-  const regions = usePsgcRegions()
-  const provinces = usePsgcProvinces(region || undefined)
-  const cities = usePsgcCities(province || undefined)
+  function applyPlace(p: PlacesResult) {
+    setLat(p.lat)
+    setLng(p.lon)
+    setAddress(p.label)
+    const a = (p.raw?.address ?? {}) as Record<string, string>
+    const regionVal = a.state ?? a.region ?? ""
+    const cityVal = a.city ?? a.municipality ?? a.town ?? a.village ?? ""
+    setRegion(regionVal)
+    setCity(cityVal)
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -87,7 +98,7 @@ export function RegisterInstitutionPage() {
       const res = await mut.mutateAsync({
         institution: {
           name: String(f.get("inst_name")),
-          address: String(f.get("address") || ""),
+          address: address || String(f.get("address") || ""),
           hospital_level: String(f.get("hospital_level") || ""),
           laboratory_level: String(f.get("laboratory_level") || ""),
           bsf_category: String(f.get("bsf_category") || ""),
@@ -99,8 +110,9 @@ export function RegisterInstitutionPage() {
             ? Number(f.get("year_program_opened"))
             : undefined,
           region: region || undefined,
-          province: province || undefined,
           city: city || undefined,
+          latitude: lat ?? undefined,
+          longitude: lng ?? undefined,
         },
         name: String(f.get("name")),
         email: String(f.get("email")),
@@ -132,7 +144,7 @@ export function RegisterInstitutionPage() {
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Address" error={fieldError("institution.address")}>
-              <Input name="address" />
+              <Input name="address" value={address} onChange={(e) => setAddress(e.target.value)} />
             </Field>
             <Field label="Hospital Level" error={fieldError("institution.hospital_level")}>
               <Input name="hospital_level" placeholder="e.g. Level 3" />
@@ -158,47 +170,13 @@ export function RegisterInstitutionPage() {
             <Field label="Year Program Opened" error={fieldError("institution.year_program_opened")}>
               <Input name="year_program_opened" type="number" min={1900} max={2100} />
             </Field>
-            <Field label="Region" error={fieldError("institution.region")}>
-              <Select
-                value={region}
-                onChange={(e) => {
-                  setRegion(e.target.value)
-                  setProvince("")
-                  setCity("")
-                }}
-              >
-                <option value="">{regions.isLoading ? "Loading…" : "Select region"}</option>
-                {(regions.data ?? []).map((o) => (
-                  <option key={o.code} value={o.code}>{o.name}</option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Province" error={fieldError("institution.province")}>
-              <Select
-                value={province}
-                disabled={!region}
-                onChange={(e) => {
-                  setProvince(e.target.value)
-                  setCity("")
-                }}
-              >
-                <option value="">{region ? (provinces.isLoading ? "Loading…" : "Select province") : "Select region first"}</option>
-                {(provinces.data ?? []).map((o) => (
-                  <option key={o.code} value={o.code}>{o.name}</option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="City" error={fieldError("institution.city")}>
-              <Select
-                value={city}
-                disabled={!province}
-                onChange={(e) => setCity(e.target.value)}
-              >
-                <option value="">{province ? (cities.isLoading ? "Loading…" : "Select city") : "Select province first"}</option>
-                {(cities.data ?? []).map((o) => (
-                  <option key={o.code} value={o.code}>{o.name}</option>
-                ))}
-              </Select>
+            <Field label="Place Search">
+              <PlacesSearchBox onSelect={applyPlace} placeholder="Type a city, municipality, or address…" />
+              {(region || city) && (
+                <p className="text-[12px] text-slate-500">
+                  Region: {region || "—"} · City/Municipality: {city || "—"}
+                </p>
+              )}
             </Field>
           </div>
 

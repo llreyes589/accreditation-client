@@ -13,7 +13,7 @@ import type {
   LoginResponse,
   Paginated,
   PendingApproval,
-  PsgcOption,
+  PlacesResult,
   Quiz,
   QuizResult,
   ResearchPaper,
@@ -47,6 +47,8 @@ export const registerInstitution = (payload: {
     region?: string;
     province?: string;
     city?: string;
+    latitude?: number;
+    longitude?: number;
   };
   name: string;
   username: string;
@@ -77,13 +79,12 @@ export const updateInstitutionProfile = (payload: {
   region?: string;
   province?: string;
   city?: string;
+  latitude?: number;
+  longitude?: number;
 }) => api<Institution>("/institution-profile", { method: "PUT", body: payload });
 
-export const getPsgcRegions = () => api<PsgcOption[]>("/psgc/regions")
-export const getPsgcProvinces = (regionCode: string) =>
-  api<PsgcOption[]>(`/psgc/regions/${regionCode}/provinces`)
-export const getPsgcCities = (provinceCode: string) =>
-  api<PsgcOption[]>(`/psgc/provinces/${provinceCode}/cities`)
+export const searchPlaces = (q: string) =>
+  api<PlacesResult[]>("/places/search?q=" + encodeURIComponent(q))
 
 export const registerResident = (payload: {
   institution_id: number;

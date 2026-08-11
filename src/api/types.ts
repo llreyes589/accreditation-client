@@ -13,9 +13,11 @@ export interface Role {
   name: RoleName
 }
 
-export interface PsgcOption {
-  code: string
-  name: string
+export interface PlacesResult {
+  label: string
+  lat: number | null
+  lon: number | null
+  raw: Record<string, unknown>
 }
 
 export interface Institution {
@@ -33,6 +35,8 @@ export interface Institution {
   region?: string | null
   province?: string | null
   city?: string | null
+  latitude?: number | null
+  longitude?: number | null
   user_id?: number | null
   registration_status?: RegistrationStatus
   approved_at?: string | null

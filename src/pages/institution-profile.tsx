@@ -2,11 +2,12 @@ import * as React from "react"
 import { Save, Loader2, CheckCircle2 } from "lucide-react"
 import { PageHeader } from "@/components/shared"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input, Label, Select } from "@/components/ui/input"
+import { Input, Label } from "@/components/ui/input"
+import { PlacesSearchBox } from "@/components/PlacesSearchBox"
 import { Button } from "@/components/ui/button"
-import { useInstitutionProfile, useUpdateInstitutionProfile, usePsgcRegions, usePsgcProvinces, usePsgcCities } from "@/api/hooks"
+import { useInstitutionProfile, useUpdateInstitutionProfile } from "@/api/hooks"
 import { ApiError } from "@/api/client"
-import type { Institution } from "@/api/types"
+import type { Institution, PlacesResult } from "@/api/types"
 
 export default function InstitutionProfilePage() {
   const q = useInstitutionProfile()
@@ -15,13 +16,15 @@ export default function InstitutionProfilePage() {
   const [ok, setOk] = React.useState(false)
 
   const [form, setForm] = React.useState<Institution | null>(null)
+  const [lat, setLat] = React.useState<number | null>(null)
+  const [lng, setLng] = React.useState<number | null>(null)
   React.useEffect(() => {
-    if (q.data) setForm(q.data)
+    if (q.data) {
+      setForm(q.data)
+      setLat(q.data.latitude ?? null)
+      setLng(q.data.longitude ?? null)
+    }
   }, [q.data])
-
-  const regions = usePsgcRegions()
-  const provinces = usePsgcProvinces(form?.region || undefined)
-  const cities = usePsgcCities(form?.province || undefined)
 
   if (q.isLoading) return <p className="text-slate-500">Loading profile…</p>
   if (q.error) return <p className="text-red-600">Failed to load institution profile.</p>
@@ -29,6 +32,17 @@ export default function InstitutionProfilePage() {
 
   function set<K extends keyof Institution>(key: K, value: Institution[K], reset?: Partial<Institution>) {
     setForm((f) => (f ? { ...f, [key]: value, ...reset } : f))
+  }
+
+  function applyPlace(p: PlacesResult) {
+    setLat(p.lat)
+    setLng(p.lon)
+    set("address", p.label)
+    const a = (p.raw?.address ?? {}) as Record<string, string>
+    const regionVal = a.state ?? a.region ?? ""
+    const cityVal = a.city ?? a.municipality ?? a.town ?? a.village ?? ""
+    set("region", regionVal || null)
+    set("city", cityVal || null)
   }
 
   async function save() {
@@ -48,8 +62,9 @@ export default function InstitutionProfilePage() {
         email: form.email ?? undefined,
         year_program_opened: form.year_program_opened ?? undefined,
         region: form.region ?? undefined,
-        province: form.province ?? undefined,
         city: form.city ?? undefined,
+        latitude: lat ?? undefined,
+        longitude: lng ?? undefined,
       })
       setOk(true)
     } catch (e) {
@@ -121,40 +136,17 @@ export default function InstitutionProfilePage() {
                 onChange={(e) => set("year_program_opened", e.target.value ? Number(e.target.value) : null)}
               />
             </Field>
+            <Field label="Place Search">
+              <PlacesSearchBox onSelect={applyPlace} placeholder="Type a city, municipality, or address…" />
+              {(lat !== null || lng !== null) && (
+                <p className="text-[12px] text-slate-500">📍 {lat ?? "—"}, {lng ?? "—"}</p>
+              )}
+            </Field>
             <Field label="Region">
-              <Select
-                value={form.region ?? ""}
-                onChange={(e) => set("region", e.target.value || null, { province: null, city: null })}
-              >
-                <option value="">{regions.isLoading ? "Loading…" : "Select region"}</option>
-                {(regions.data ?? []).map((o) => (
-                  <option key={o.code} value={o.code}>{o.name}</option>
-                ))}
-              </Select>
+              <Input value={form.region ?? ""} readOnly placeholder="Set via Place Search" onChange={() => {}} />
             </Field>
-            <Field label="Province">
-              <Select
-                value={form.province ?? ""}
-                disabled={!form.region}
-                onChange={(e) => set("province", e.target.value || null, { city: null })}
-              >
-                <option value="">{form.region ? (provinces.isLoading ? "Loading…" : "Select province") : "Select region first"}</option>
-                {(provinces.data ?? []).map((o) => (
-                  <option key={o.code} value={o.code}>{o.name}</option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="City">
-              <Select
-                value={form.city ?? ""}
-                disabled={!form.province}
-                onChange={(e) => set("city", e.target.value || null)}
-              >
-                <option value="">{form.province ? (cities.isLoading ? "Loading…" : "Select city") : "Select province first"}</option>
-                {(cities.data ?? []).map((o) => (
-                  <option key={o.code} value={o.code}>{o.name}</option>
-                ))}
-              </Select>
+            <Field label="City / Municipality">
+              <Input value={form.city ?? ""} readOnly placeholder="Set via Place Search" onChange={() => {}} />
             </Field>
           </div>
         </CardContent>
