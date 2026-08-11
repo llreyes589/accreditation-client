@@ -157,6 +157,25 @@ export const useScheduleInspection = () =>
     [qk.adminPending, qk.dashboard, qk.accreditations]
   )
 
+export const useMarkRequirementsCompleted = () =>
+  useInvalidating(
+    (id: number) => ep.markRequirementsCompleted(id),
+    [qk.adminPending]
+  )
+
+export const useGetChecklistItems = (enabled = true) =>
+  useQuery({ queryKey: ["checklist-items"], queryFn: ep.getChecklistItems, enabled, retry: false })
+
+export const usePendingInspections = (enabled = true) =>
+  useQuery({ queryKey: ["inspections", "pending"], queryFn: ep.pendingInspections, enabled, retry: false })
+
+export const useSubmitInspection = () =>
+  useInvalidating(
+    (v: { id: number; answers: Record<string, { compliant: boolean; notes?: string }> }) =>
+      ep.submitInspection(v.id, v.answers),
+    [["inspections", "pending"], qk.accreditations, qk.dashboard]
+  )
+
 export const useCreateTrainingOfficer = () =>
   useInvalidating(ep.createTrainingOfficer, [qk.trainingOfficers])
 

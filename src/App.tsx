@@ -23,6 +23,7 @@ import DocumentsPage from "@/pages/documents"
 import SettingsPage from "@/pages/settings"
 import LoginPage from "@/pages/login"
 import PendingPage from "@/pages/pending"
+import InspectionPage from "@/pages/inspection"
 import { RegisterInstitutionPage, RegisterResidentPage } from "@/pages/register"
 
 const queryClient = new QueryClient({
@@ -60,6 +61,7 @@ function PublicOnly({ children }: { children: ReactNode }) {
 
 const TO: RoleName[] = ["TrainingOfficer", "TrainingInstitution"]
 const ADMIN: RoleName[] = ["Admin"]
+const ACCREDITOR: RoleName[] = ["Accreditor"]
 
 function Router() {
   return (
@@ -85,6 +87,8 @@ function Router() {
         <Route path="case-logs" element={<Protected roles={TO}><CaseLogsPage /></Protected>} />
         <Route path="transfers" element={<Protected roles={TO}><TransfersPage /></Protected>} />
         <Route path="documents" element={<Protected roles={TO}><DocumentsPage /></Protected>} />
+        <Route path="inspection" element={<Protected roles={ACCREDITOR}><InspectionPage /></Protected>} />
+        <Route path="inspection/:id" element={<Protected roles={ACCREDITOR}><InspectionPage /></Protected>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

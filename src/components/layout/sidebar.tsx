@@ -8,6 +8,7 @@ import {
   CalendarRange,
   FlaskConical,
   ClipboardList,
+  ClipboardCheck,
   GraduationCap,
   FileText,
   ArrowLeftRight,
@@ -29,11 +30,13 @@ type NavItem = {
 
 const TO: RoleName[] = ["TrainingOfficer", "TrainingInstitution"]
 const ADMIN: RoleName[] = ["Admin"]
+const ACCREDITOR: RoleName[] = ["Accreditor"]
 const ALL: RoleName[] = ["Admin", "Accreditor", "TrainingOfficer", "Resident"]
 
 export const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ALL },
   { to: "/approvals", label: "Approvals", icon: ShieldCheck, roles: ADMIN },
+  { to: "/inspection", label: "Inspections", icon: ClipboardCheck, roles: ACCREDITOR },
   { to: "/institutions", label: "Institutions", icon: Building2, roles: ALL },
   { to: "/institution-profile", label: "Institution Profile", icon: Building2, roles: TO },
   { to: "/accreditation", label: "Accreditation", icon: FileText, roles: TO },

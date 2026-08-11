@@ -155,6 +155,26 @@ export interface ChecklistItem {
   done: boolean
 }
 
+export interface InspectionChecklistItem {
+  id: number
+  section: string
+  code: string | null
+  criterion: string
+  is_major: boolean
+  notes_hint: string | null
+  sort_order: number
+}
+
+export interface AccreditationInspection {
+  id: number
+  accreditation_id: number
+  accreditor_id: number | null
+  inspection_scheduled_at: string | null
+  conducted_at: string | null
+  status: "pending" | "submitted"
+  answers: Record<string, { compliant: boolean; notes?: string }> | null
+}
+
 export interface Accreditation {
   id: number
   institution_id: number
@@ -162,7 +182,7 @@ export interface Accreditation {
   approved_by: number | null
   valid_from: string | null
   valid_until: string | null
-  status: "pending" | "approved" | "rejected" | "inspection_scheduled"
+  status: "pending" | "requirements_completed" | "inspection_scheduled" | "inspected" | "approved" | "rejected"
   submission_type?: "new" | "renew" | null
   inspection_scheduled_at?: string | null
   submitted_at?: string | null

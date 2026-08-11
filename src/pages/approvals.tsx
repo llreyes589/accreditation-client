@@ -13,7 +13,7 @@ import {
 import { Loading, ErrorState, Empty } from "@/components/states"
 import {
   useAdminPending, useApproveUser, useRejectUser,
-  useApproveAccreditation, useRejectAccreditation, useCreateStaff, useScheduleInspection,
+  useApproveAccreditation, useRejectAccreditation, useCreateStaff, useScheduleInspection, useMarkRequirementsCompleted,
 } from "@/api/hooks"
 import { roleLabel, statusLabel, ACCREDITATION_DOC_TYPES } from "@/api/types"
 import { ApiError } from "@/api/client"
@@ -25,6 +25,7 @@ export default function ApprovalsPage() {
   const approveAcc = useApproveAccreditation()
   const rejectAcc = useRejectAccreditation()
   const scheduleInspection = useScheduleInspection()
+  const markComplete = useMarkRequirementsCompleted()
 
   const [rejecting, setRejecting] = React.useState<number | null>(null)
   const [reason, setReason] = React.useState("")
@@ -209,20 +210,30 @@ export default function ApprovalsPage() {
                               <div className="flex justify-end gap-2">
                                 <Button
                                   variant="outline" size="sm"
-                                  disabled={rejectAcc.isPending || a.status === "inspection_scheduled"}
+                                  disabled={rejectAcc.isPending}
                                   onClick={() => rejectAcc.mutate(a.id)}
                                 >
                                   <X /> Reject
                                 </Button>
                                 <Button
                                   size="sm"
-                                  disabled={approveAcc.isPending || a.status === "inspection_scheduled"}
+                                  disabled={approveAcc.isPending || a.status !== "inspected"}
                                   onClick={() => approveAcc.mutate(a.id)}
                                 >
                                   <Check /> Approve
                                 </Button>
                               </div>
-                              {a.status === "approved" && (
+                              {a.status === "pending" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={markComplete.isPending}
+                                  onClick={() => markComplete.mutate(a.id)}
+                                >
+                                  Mark requirements complete
+                                </Button>
+                              )}
+                              {a.status === "requirements_completed" && (
                                 <div className="flex items-center gap-2">
                                   <Input
                                     type="date"
@@ -243,7 +254,12 @@ export default function ApprovalsPage() {
                               )}
                               {a.status === "inspection_scheduled" && a.inspection_scheduled_at && (
                                 <span className="text-[12px] text-slate-500">
-                                  Inspection: {a.inspection_scheduled_at.slice(0, 10)}
+                                  Inspection: {a.inspection_scheduled_at.slice(0, 10)} — awaiting accreditor
+                                </span>
+                              )}
+                              {a.status === "inspected" && (
+                                <span className="text-[12px] text-emerald-600">
+                                  Inspected — ready for approval
                                 </span>
                               )}
                             </div>

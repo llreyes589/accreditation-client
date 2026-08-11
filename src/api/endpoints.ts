@@ -2,6 +2,7 @@ import { api } from "./client";
 import type {
   AdminPending,
   Accreditation,
+  AccreditationInspection,
   AppNotification,
   CaseLog,
   ChecklistItem,
@@ -10,6 +11,7 @@ import type {
   DashboardResponse,
   Institution,
   InstitutionDocument,
+  InspectionChecklistItem,
   LoginResponse,
   Paginated,
   PendingApproval,
@@ -220,7 +222,28 @@ export const scheduleInspection = (id: number, inspection_scheduled_at: string) 
   api<Accreditation>(`/admin/accreditations/${id}/schedule-inspection`, {
     method: "POST",
     body: { inspection_scheduled_at },
-  });
+  })
+
+export const markRequirementsCompleted = (id: number) =>
+  api<Accreditation>(`/admin/accreditations/${id}/mark-requirements-completed`, {
+    method: "POST",
+  })
+
+/* Inspection capture (Accreditor) */
+export const getChecklistItems = () =>
+  api<InspectionChecklistItem[]>(`/accreditor/checklist-items`)
+
+export const pendingInspections = () =>
+  api<Accreditation[]>(`/accreditor/inspections/pending`)
+
+export const submitInspection = (
+  id: number,
+  answers: Record<string, { compliant: boolean; notes?: string }>,
+) =>
+  api<{ accreditation: Accreditation; inspection: AccreditationInspection }>(
+    `/accreditor/accreditations/${id}/submit-inspection`,
+    { method: "POST", body: { answers } },
+  );
 
 /* Training officers */
 export const listTrainingOfficers = () =>
