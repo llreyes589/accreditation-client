@@ -216,6 +216,12 @@ export const listAccreditations = () => api<Accreditation[]>("/accreditations");
 export const submitAccreditation = (checklist_snapshot: ChecklistItem[]) =>
   api<Accreditation>("/accreditations", { body: { checklist_snapshot } });
 
+export const scheduleInspection = (id: number, inspection_scheduled_at: string) =>
+  api<Accreditation>(`/admin/accreditations/${id}/schedule-inspection`, {
+    method: "POST",
+    body: { inspection_scheduled_at },
+  });
+
 /* Training officers */
 export const listTrainingOfficers = () =>
   api<import("./types").TrainingOfficer[]>("/training-officers");

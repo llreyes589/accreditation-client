@@ -48,7 +48,10 @@ export interface Institution {
 export interface InstitutionDocument {
   id: number
   institution_id: number
-  type: "license" | "permit" | "accreditation" | "other"
+  type:
+    | "license" | "permit" | "accreditation" | "other"
+    | "lto_clinical_lab" | "lto_bsf" | "chairman_designation" | "psp_certificate"
+    | "floor_plan" | "org_chart" | "rotation_schedule" | "conference_schedule" | "activity_schedule"
   file_path: string
   expires_at: string | null
   created_at?: string
@@ -159,9 +162,25 @@ export interface Accreditation {
   approved_by: number | null
   valid_from: string | null
   valid_until: string | null
-  status: "pending" | "approved" | "rejected"
+  status: "pending" | "approved" | "rejected" | "inspection_scheduled"
+  submission_type?: "new" | "renew" | null
+  inspection_scheduled_at?: string | null
+  submitted_at?: string | null
   institution?: Institution
 }
+
+/** The 9 supporting documents required to apply for/renew accreditation. */
+export const ACCREDITATION_DOC_TYPES: { value: string; label: string }[] = [
+  { value: "lto_clinical_lab", label: "LTO Clinical Lab" },
+  { value: "lto_bsf", label: "LTO BSF" },
+  { value: "chairman_designation", label: "Designation of Chairman" },
+  { value: "psp_certificate", label: "PSP certificate as Fellow consistent with specialty" },
+  { value: "floor_plan", label: "Floor plan" },
+  { value: "org_chart", label: "Org chart" },
+  { value: "rotation_schedule", label: "Rotation per month, annual" },
+  { value: "conference_schedule", label: "Conference schedule" },
+  { value: "activity_schedule", label: "Activity schedule" },
+]
 
 export interface RotationAssignment {
   id: number

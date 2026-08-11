@@ -8,34 +8,20 @@ import { StatusBadge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/primitives"
 import { Loading, ErrorState, Empty } from "@/components/states"
-import { useAccreditations, useSubmitAccreditation } from "@/api/hooks"
-import { statusLabel, type ChecklistItem } from "@/api/types"
+import { useAccreditations, useSubmitAccreditation, useDocuments } from "@/api/hooks"
+import { statusLabel, ACCREDITATION_DOC_TYPES, type ChecklistItem } from "@/api/types"
 import { ApiError } from "@/api/client"
 import { cn } from "@/lib/utils"
 
-/** The checklist the institution fills before submitting. Sent as checklist_snapshot. */
-const CHECKLIST: { section: string; items: string[] }[] = [
-  {
-    section: "Institutional Documents",
-    items: [
-      "LTO Clinical Laboratory",
-      "LTO BSF",
-      "Chairman Designation",
-      "PSP Certificate",
-    ],
-  },
-  { section: "Facilities", items: ["Floor Plan", "Organization Chart"] },
-  {
-    section: "Training Program",
-    items: ["Rotation Schedule", "Conference Schedule", "Activity Schedule"],
-  },
-]
+/** The checklist the institution fills before submitting. Each item maps to a required document. */
+const CHECKLIST = ACCREDITATION_DOC_TYPES.map((d) => ({ label: d.label, doc: d.value }))
 
-const ALL_ITEMS = CHECKLIST.flatMap((s) => s.items)
+const ALL_ITEMS = CHECKLIST.flatMap((s) => s.label)
 
 export default function AccreditationPage() {
   const q = useAccreditations()
   const submit = useSubmitAccreditation()
+  const docsQ = useDocuments()
   const [checked, setChecked] = React.useState<Record<string, boolean>>({})
   const [err, setErr] = React.useState<string | null>(null)
 
@@ -47,6 +33,18 @@ export default function AccreditationPage() {
   const done = ALL_ITEMS.filter((i) => checked[i]).length
   const pct = Math.round((done / ALL_ITEMS.length) * 100)
   const hasPending = latest?.status === "pending"
+  // A still-valid (approved) accreditation blocks a new/renew application.
+  const isValidHeld = latest?.status === "approved" && !!latest?.valid_until && new Date(latest.valid_until).getTime() > Date.now()
+
+  const uploaded = new Set<string>((docsQ.data ?? []).map((d) => d.type))
+  const missing = ACCREDITATION_DOC_TYPES.filter((d) => !uploaded.has(d.value))
+  const canSubmit = missing.length === 0 && !hasPending && !isValidHeld
+
+  const submissionType =
+    latest?.valid_until && new Date(latest.valid_until).getTime() > Date.now() &&
+    new Date(latest.valid_until).getTime() <= Date.now() + 90 * 86_400_000
+      ? "Renew"
+      : "New"
 
   async function onSubmit() {
     setErr(null)
@@ -66,9 +64,9 @@ export default function AccreditationPage() {
     <>
       <PageHeader
         title="Accreditation"
-        description="Complete the checklist and submit for Accreditor and Admin review"
+        description={`Complete the checklist and submit for Accreditor and Admin review · This is a ${submissionType} application`}
         actions={
-          <Button size="sm" onClick={onSubmit} disabled={submit.isPending || hasPending}>
+          <Button size="sm" onClick={onSubmit} disabled={submit.isPending || !canSubmit}>
             {submit.isPending ? <Loader2 className="animate-spin" /> : <Send />}
             {hasPending ? "Submission pending" : "Submit for review"}
           </Button>
@@ -78,6 +76,12 @@ export default function AccreditationPage() {
       {err && (
         <p className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">
           {err}
+        </p>
+      )}
+
+      {isValidHeld && (
+        <p className="mb-4 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-[13px] text-blue-700">
+          Your institution already holds a valid accreditation{latest?.valid_until ? ` until ${new Date(latest.valid_until).toISOString().slice(0, 10)}` : ""}. A new or renewal application cannot be submitted unless the current one is rejected.
         </p>
       )}
 
@@ -110,45 +114,50 @@ export default function AccreditationPage() {
         </TabsList>
 
         <TabsContent value="checklist">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {CHECKLIST.map((sec) => (
-              <Card key={sec.section}>
-                <CardHeader>
-                  <CardTitle>{sec.section}</CardTitle>
-                  <CardDescription>
-                    {sec.items.filter((i) => checked[i]).length}/{sec.items.length} complete
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-1">
-                  {sec.items.map((label) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => setChecked((c) => ({ ...c, [label]: !c[label] }))}
-                      className="flex w-full items-center gap-2.5 rounded px-1 py-1.5 text-left transition-colors hover:bg-slate-50"
-                    >
-                      {checked[label] ? (
-                        <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
-                      ) : (
-                        <Circle className="size-4 shrink-0 text-slate-300" />
-                      )}
-                      <span
-                        className={cn(
-                          "text-[13px]",
-                          checked[label] ? "font-medium text-ink" : "text-slate-500"
-                        )}
-                      >
-                        {label}
-                      </span>
-                    </button>
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Required Documents Checklist</CardTitle>
+              <CardDescription>
+                Tick each item after uploading the matching file under <strong>Documents</strong>.
+                All 9 must be uploaded before you can submit.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              {CHECKLIST.map((item) => {
+                const isUploaded = uploaded.has(item.doc)
+                const isChecked = checked[item.label]
+                return (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => setChecked((c) => ({ ...c, [item.label]: !c[item.label] }))}
+                    className="flex w-full items-center gap-2.5 rounded px-1 py-1.5 text-left transition-colors hover:bg-slate-50"
+                  >
+                    {isChecked ? (
+                      <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                    ) : (
+                      <Circle className="size-4 shrink-0 text-slate-300" />
+                    )}
+                    <span className={cn("text-[13px]", isChecked ? "font-medium text-ink" : "text-slate-500")}>
+                      {item.label}
+                    </span>
+                    {isUploaded && (
+                      <span className="ml-auto text-[11px] font-medium text-emerald-600">Uploaded</span>
+                    )}
+                  </button>
+                )
+              })}
+            </CardContent>
+          </Card>
+          {missing.length > 0 && (
+            <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+              Missing documents: {missing.map((d) => d.label).join(", ")}. Upload them under{" "}
+              <strong>Documents</strong> to enable submission.
+            </p>
+          )}
           <p className="mt-3 text-[12px] text-slate-500">
-            Supporting files are managed under <strong>Documents</strong>. Submitting sends this
-            checklist to the Admin queue as <code className="data-mono">checklist_snapshot</code>.
+            Submitting sends this checklist to the Admin queue as{" "}
+            <code className="data-mono">checklist_snapshot</code>.
           </p>
         </TabsContent>
 

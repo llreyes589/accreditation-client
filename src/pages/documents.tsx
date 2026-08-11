@@ -12,6 +12,7 @@ import {
 import { Loading, ErrorState, Empty } from "@/components/states"
 import { useDocuments, useUploadDocument } from "@/api/hooks"
 import { API_URL, ApiError } from "@/api/client"
+import { ACCREDITATION_DOC_TYPES } from "@/api/types"
 
 const storageUrl = (p: string) => `${API_URL.replace(/\/api$/, "")}/storage/${p}`
 
@@ -125,7 +126,9 @@ function UploadDialog() {
             if (!file?.size) return
             try {
               await mut.mutateAsync({
-                type: String(f.get("type")) as "license" | "permit" | "accreditation" | "other",
+                type: String(f.get("type")) as "license" | "permit" | "accreditation" | "other"
+                  | "lto_clinical_lab" | "lto_bsf" | "chairman_designation" | "psp_certificate"
+                  | "floor_plan" | "org_chart" | "rotation_schedule" | "conference_schedule" | "activity_schedule",
                 file,
               })
               setOpen(false)
@@ -140,6 +143,11 @@ function UploadDialog() {
               <option value="permit">Permit</option>
               <option value="accreditation">Accreditation</option>
               <option value="other">Other</option>
+              <optgroup label="Accreditation requirements">
+                {ACCREDITATION_DOC_TYPES.map((d) => (
+                  <option key={d.value} value={d.value}>{d.label}</option>
+                ))}
+              </optgroup>
             </Select>
           </div>
           <div className="space-y-1.5"><Label>File</Label><Input name="file" type="file" required /></div>

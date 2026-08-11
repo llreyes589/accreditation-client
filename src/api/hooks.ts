@@ -108,8 +108,12 @@ function useInvalidating<TArgs, TData>(
 
 export const useUploadDocument = () =>
   useInvalidating(
-    (v: { type: "license" | "permit" | "accreditation" | "other"; file: File }) =>
-      ep.uploadDocument(v.type, v.file),
+    (v: {
+      type: "license" | "permit" | "accreditation" | "other"
+        | "lto_clinical_lab" | "lto_bsf" | "chairman_designation" | "psp_certificate"
+        | "floor_plan" | "org_chart" | "rotation_schedule" | "conference_schedule" | "activity_schedule"
+      file: File
+    }) => ep.uploadDocument(v.type, v.file),
     [qk.documents, qk.dashboard]
   )
 
@@ -145,6 +149,12 @@ export const useSubmitAccreditation = () =>
   useInvalidating(
     (snapshot: ChecklistItem[]) => ep.submitAccreditation(snapshot),
     [qk.accreditations, qk.dashboard]
+  )
+
+export const useScheduleInspection = () =>
+  useInvalidating(
+    (v: { id: number; date: string }) => ep.scheduleInspection(v.id, v.date),
+    [qk.adminPending, qk.dashboard, qk.accreditations]
   )
 
 export const useCreateTrainingOfficer = () =>

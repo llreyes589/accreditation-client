@@ -13,9 +13,9 @@ import {
 import { Loading, ErrorState, Empty } from "@/components/states"
 import {
   useAdminPending, useApproveUser, useRejectUser,
-  useApproveAccreditation, useRejectAccreditation, useCreateStaff,
+  useApproveAccreditation, useRejectAccreditation, useCreateStaff, useScheduleInspection,
 } from "@/api/hooks"
-import { roleLabel, statusLabel } from "@/api/types"
+import { roleLabel, statusLabel, ACCREDITATION_DOC_TYPES } from "@/api/types"
 import { ApiError } from "@/api/client"
 
 export default function ApprovalsPage() {
@@ -24,9 +24,11 @@ export default function ApprovalsPage() {
   const reject = useRejectUser()
   const approveAcc = useApproveAccreditation()
   const rejectAcc = useRejectAccreditation()
+  const scheduleInspection = useScheduleInspection()
 
   const [rejecting, setRejecting] = React.useState<number | null>(null)
   const [reason, setReason] = React.useState("")
+  const [schedDate, setSchedDate] = React.useState<Record<number, string>>({})
 
   if (q.isLoading) return <Loading label="Loading approval queue…" />
   if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />
@@ -166,44 +168,89 @@ export default function ApprovalsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Institution</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Checklist items</TableHead>
+                      <TableHead>Missing docs</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Decision</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {d.accreditations.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell>
-                          <p className="font-semibold">
-                            {a.institution?.name ?? `Institution #${a.institution_id}`}
-                          </p>
-                          <p className="data-mono text-slate-400">ACC-{a.id}</p>
-                        </TableCell>
-                        <TableCell className="data-mono">
-                          {(a.checklist_snapshot ?? []).filter((i) => i.done).length}/{(a.checklist_snapshot ?? []).length}
-                        </TableCell>
-                        <TableCell><StatusBadge status={statusLabel(a.status)} /></TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline" size="sm"
-                              disabled={rejectAcc.isPending}
-                              onClick={() => rejectAcc.mutate(a.id)}
-                            >
-                              <X /> Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              disabled={approveAcc.isPending}
-                              onClick={() => approveAcc.mutate(a.id)}
-                            >
-                              <Check /> Approve
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {d.accreditations.map((a) => {
+                      const missing = ACCREDITATION_DOC_TYPES.filter(
+                        (t) => !(a.institution?.documents ?? []).some((doc: { type: string }) => doc.type === t.value),
+                      )
+                      return (
+                        <TableRow key={a.id}>
+                          <TableCell>
+                            <p className="font-semibold">
+                              {a.institution?.name ?? `Institution #${a.institution_id}`}
+                            </p>
+                            <p className="data-mono text-slate-400">ACC-{a.id}</p>
+                          </TableCell>
+                          <TableCell className="data-mono">
+                            {a.submission_type === "renew" ? "Renew" : a.submission_type === "new" ? "New" : "—"}
+                          </TableCell>
+                          <TableCell className="data-mono">
+                            {(a.checklist_snapshot ?? []).filter((i) => i.done).length}/{(a.checklist_snapshot ?? []).length}
+                          </TableCell>
+                          <TableCell className="max-w-[16rem]">
+                            {missing.length === 0 ? (
+                              <span className="text-[12px] font-medium text-emerald-600">Complete</span>
+                            ) : (
+                              <span className="text-[12px] text-amber-700">
+                                {missing.map((m) => m.label).join(", ")}
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell><StatusBadge status={statusLabel(a.status)} /></TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline" size="sm"
+                                  disabled={rejectAcc.isPending || a.status === "inspection_scheduled"}
+                                  onClick={() => rejectAcc.mutate(a.id)}
+                                >
+                                  <X /> Reject
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  disabled={approveAcc.isPending || a.status === "inspection_scheduled"}
+                                  onClick={() => approveAcc.mutate(a.id)}
+                                >
+                                  <Check /> Approve
+                                </Button>
+                              </div>
+                              {a.status === "approved" && (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="date"
+                                    className="h-8 w-auto text-[12px]"
+                                    value={schedDate[a.id] ?? ""}
+                                    min={new Date().toISOString().slice(0, 10)}
+                                    onChange={(e) => setSchedDate((s) => ({ ...s, [a.id]: e.target.value }))}
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={scheduleInspection.isPending || !schedDate[a.id]}
+                                    onClick={() => scheduleInspection.mutate({ id: a.id, date: schedDate[a.id] })}
+                                  >
+                                    Schedule inspection
+                                  </Button>
+                                </div>
+                              )}
+                              {a.status === "inspection_scheduled" && a.inspection_scheduled_at && (
+                                <span className="text-[12px] text-slate-500">
+                                  Inspection: {a.inspection_scheduled_at.slice(0, 10)}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               )}
