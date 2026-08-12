@@ -1,5 +1,6 @@
 import * as React from "react"
-import { UserPlus, Loader2, ArrowLeftRight } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { UserPlus, Loader2, ArrowLeftRight, GitBranch } from "lucide-react"
 import { PageHeader, StatCard } from "@/components/shared"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -26,6 +27,7 @@ const promotionLabel = (s?: string | null) => {
 
 export default function ResidentsPage() {
   const q = useResidents()
+  const navigate = useNavigate()
   const [search, setSearch] = React.useState("")
   const [track, setTrack] = React.useState("All")
 
@@ -109,7 +111,14 @@ export default function ResidentsPage() {
                       <StatusBadge status={promotionLabel(r.promotion_status)} />
                     </TableCell>
                     <TableCell><StatusBadge status={statusLabel(r.user?.status)} /></TableCell>
-                    <TableCell className="text-right"><TransferDialog resident={r} /></TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/residents/${r.id}`)}>
+                          <GitBranch /> Lifecycle
+                        </Button>
+                        <TransferDialog resident={r} />
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
