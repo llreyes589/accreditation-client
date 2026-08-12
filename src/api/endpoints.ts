@@ -8,6 +8,10 @@ import type {
   ChecklistItem,
   Consultant,
   ConsultantDocument,
+  ConsultantReview,
+  ConsultantEvaluation,
+  RemediationPlan,
+  PortfolioArchive,
   DashboardResponse,
   Institution,
   InstitutionDocument,
@@ -330,6 +334,60 @@ export const updateRotationAssignment = (
     method: "PUT",
     body: payload,
   });
+
+/* Remaining flowchart stages: consultant review, evaluation, remediation, archive */
+
+export const listConsultantReviews = () =>
+  api<ConsultantReview[]>("/consultant-reviews");
+
+export const createConsultantReview = (payload: {
+  rotation_assignment_id: number;
+  consultant_id?: number;
+  status: "validated" | "returned";
+  comments?: string;
+}) => api<ConsultantReview>("/consultant-reviews", { body: payload });
+
+export const listConsultantEvaluations = () =>
+  api<ConsultantEvaluation[]>("/consultant-evaluations");
+
+export const createConsultantEvaluation = (payload: {
+  resident_id: number;
+  consultant_id?: number;
+  period: string;
+  ratings?: Record<string, number>;
+  comments?: string;
+  recommendation?: "continue" | "remediate";
+  evaluated_at?: string;
+}) => api<ConsultantEvaluation>("/consultant-evaluations", { body: payload });
+
+export const listRemediationPlans = () =>
+  api<RemediationPlan[]>("/remediation-plans");
+
+export const createRemediationPlan = (payload: {
+  resident_id: number;
+  reason: string;
+  plan: string;
+  target_date?: string;
+}) => api<RemediationPlan>("/remediation-plans", { body: payload });
+
+export const updateRemediationPlan = (
+  id: number,
+  payload: {
+    status: "open" | "in_progress" | "completed" | "closed";
+    plan?: string;
+    target_date?: string;
+  },
+) => api<RemediationPlan>(`/remediation-plans/${id}`, { method: "PUT", body: payload });
+
+export const listPortfolioArchives = () =>
+  api<PortfolioArchive[]>("/portfolio-archives");
+
+export const createPortfolioArchive = (payload: {
+  resident_id: number;
+  summary?: string;
+  status?: "archived" | "sealed";
+  archived_at?: string;
+}) => api<PortfolioArchive>("/portfolio-archives", { body: payload });
 
 /* =========================================================
    ADMIN  (prefix /admin, role:Admin)

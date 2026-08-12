@@ -233,6 +233,38 @@ export const useUpdateAssignment = () =>
     [qk.rotations, qk.dashboard]
   )
 
+/* remaining flowchart stages */
+export const useConsultantReviews = (enabled = true) =>
+  useQuery({ queryKey: ["consultantReviews"], queryFn: ep.listConsultantReviews, enabled })
+
+export const useCreateConsultantReview = () =>
+  useInvalidating(ep.createConsultantReview, [["consultantReviews"], qk.rotations, qk.dashboard])
+
+export const useConsultantEvaluations = (enabled = true) =>
+  useQuery({ queryKey: ["consultantEvaluations"], queryFn: ep.listConsultantEvaluations, enabled })
+
+export const useCreateConsultantEvaluation = () =>
+  useInvalidating(ep.createConsultantEvaluation, [["consultantEvaluations"], qk.residents, qk.dashboard])
+
+export const useRemediationPlans = (enabled = true) =>
+  useQuery({ queryKey: ["remediationPlans"], queryFn: ep.listRemediationPlans, enabled })
+
+export const useCreateRemediationPlan = () =>
+  useInvalidating(ep.createRemediationPlan, [["remediationPlans"], qk.residents])
+
+export const useUpdateRemediationPlan = () =>
+  useInvalidating(
+    (v: { id: number; status: "open" | "in_progress" | "completed" | "closed"; plan?: string; target_date?: string }) =>
+      ep.updateRemediationPlan(v.id, { status: v.status, plan: v.plan, target_date: v.target_date }),
+    [["remediationPlans"], qk.residents]
+  )
+
+export const usePortfolioArchives = (enabled = true) =>
+  useQuery({ queryKey: ["portfolioArchives"], queryFn: ep.listPortfolioArchives, enabled })
+
+export const useCreatePortfolioArchive = () =>
+  useInvalidating(ep.createPortfolioArchive, [["portfolioArchives"], qk.residents])
+
 export const useReadNotification = () =>
   useInvalidating(ep.readNotification, [qk.notifications, qk.dashboard])
 

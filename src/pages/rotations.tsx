@@ -11,9 +11,9 @@ import {
 import { Loading, ErrorState, Empty } from "@/components/states"
 import {
   useRotations, useCreateRotation, useConsultants, useResidents,
-  useAssignRotation, useUpdateAssignment,
+  useAssignRotation, useUpdateAssignment, useConsultantReviews, useCreateConsultantReview,
 } from "@/api/hooks"
-import { statusLabel, type RotationBlock } from "@/api/types"
+import { statusLabel, type RotationBlock, type ConsultantReview } from "@/api/types"
 import { ApiError } from "@/api/client"
 
 /** Backend requires starts_at = first day and ends_at = last day of a calendar month. */
@@ -67,7 +67,11 @@ export default function RotationsPage() {
 
 function RotationCard({ rotation }: { rotation: RotationBlock }) {
   const update = useUpdateAssignment()
+  const reviews = useConsultantReviews()
   const assignments = rotation.assignments ?? []
+
+  const reviewFor = (assignmentId: number) =>
+    (reviews.data ?? []).find((rv: ConsultantReview) => rv.rotation_assignment_id === assignmentId)
 
   return (
     <Card>
@@ -98,6 +102,7 @@ function RotationCard({ rotation }: { rotation: RotationBlock }) {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <StatusBadge status={statusLabel(a.status)} />
+              <ReviewDialog assignmentId={a.id} existing={reviewFor(a.id)} />
               {a.status !== "completed" && (
                 <form
                   className="flex items-center gap-2"
@@ -238,6 +243,59 @@ function AssignDialog({ rotation }: { rotation: RotationBlock }) {
             <Button type="submit" disabled={mut.isPending}>
               {mut.isPending && <Loader2 className="animate-spin" />} Assign
             </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/* G/H/I: consultant review on a rotation assignment (validate or return for correction). */
+function ReviewDialog({ assignmentId, existing }: { assignmentId: number; existing?: ConsultantReview }) {
+  const mut = useCreateConsultantReview()
+  const [open, setOpen] = React.useState(false)
+  const [err, setErr] = React.useState<string | null>(null)
+  const label = existing ? (existing.status === "returned" ? "Returned" : "Validated") : "Review"
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">{label}</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Consultant review</DialogTitle>
+          <DialogDescription>
+            Validate the resident's work for this rotation, or return it for correction.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-3"
+          onSubmit={async (e) => {
+            e.preventDefault(); setErr(null)
+            const f = new FormData(e.currentTarget)
+            try {
+              await mut.mutateAsync({
+                rotation_assignment_id: assignmentId,
+                status: String(f.get("status")) as "validated" | "returned",
+                comments: String(f.get("comments") || "") || undefined,
+              })
+              setOpen(false)
+            } catch (e2) { setErr(e2 instanceof ApiError ? e2.firstError : "Failed.") }
+          }}
+        >
+          {err && <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">{err}</p>}
+          <div className="space-y-1.5">
+            <Label>Verdict</Label>
+            <Select name="status" defaultValue={existing?.status ?? "validated"}>
+              <option value="validated">Validated</option>
+              <option value="returned">Return for correction</option>
+            </Select>
+          </div>
+          <div className="space-y-1.5"><Label>Comments</Label><Textarea name="comments" rows={3} defaultValue={existing?.comments ?? ""} /></div>
+          <div className="flex justify-end gap-2 pt-1">
+            <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
+            <Button type="submit" disabled={mut.isPending}>Save review</Button>
           </div>
         </form>
       </DialogContent>

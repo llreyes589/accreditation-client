@@ -307,5 +307,49 @@ export const trackLabel = (t?: Track | string | null) =>
 export const statusLabel = (s?: string | null) =>
   s ? s.charAt(0).toUpperCase() + s.slice(1) : "—"
 
+/* ---- Resident flowchart: remaining stages (G/H/I, M, N/O, U) ---- */
+
+export interface ConsultantReview {
+  id: number
+  rotation_assignment_id: number
+  consultant_id: number | null
+  status: "validated" | "returned"
+  comments: string | null
+  consultant?: Consultant | null
+  assignment?: RotationAssignment
+}
+
+export interface ConsultantEvaluation {
+  id: number
+  resident_id: number
+  consultant_id: number | null
+  period: string
+  ratings: Record<string, number> | null
+  comments: string | null
+  recommendation: "continue" | "remediate" | null
+  evaluated_at: string | null
+  resident?: Resident
+  consultant?: Consultant | null
+}
+
+export interface RemediationPlan {
+  id: number
+  resident_id: number
+  reason: string
+  plan: string
+  status: "open" | "in_progress" | "completed" | "closed"
+  target_date: string | null
+  resident?: Resident
+}
+
+export interface PortfolioArchive {
+  id: number
+  resident_id: number
+  summary: string | null
+  status: "archived" | "sealed"
+  archived_at: string | null
+  resident?: Resident
+}
+
 export const roleLabel = (r?: RoleName | string | null) =>
   r === "TrainingOfficer" ? "Training Officer" : (r ?? "—")
