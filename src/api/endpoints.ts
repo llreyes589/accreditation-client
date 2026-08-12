@@ -230,6 +230,20 @@ export const markRequirementsCompleted = (id: number) =>
   })
 
 /* Inspection capture (Accreditor) */
+export const getAccreditation = (id: number) =>
+  api<{
+    accreditation: Accreditation & { inspections: AccreditationInspection[] }
+    documents: InstitutionDocument[]
+    checklist_items: InspectionChecklistItem[]
+  }>(`/accreditations/${id}`)
+
+export const getAdminAccreditation = (id: number) =>
+  api<{
+    accreditation: Accreditation & { inspections: AccreditationInspection[]; institution?: Institution }
+    documents: InstitutionDocument[]
+    checklist_items: InspectionChecklistItem[]
+  }>(`/admin/accreditations/${id}`)
+
 export const getChecklistItems = () =>
   api<InspectionChecklistItem[]>(`/accreditor/checklist-items`)
 

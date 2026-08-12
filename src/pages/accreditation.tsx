@@ -1,5 +1,5 @@
 import * as React from "react"
-import { CheckCircle2, Circle, Send, Loader2 } from "lucide-react"
+import { CheckCircle2, Circle, Send, Loader2, FileText, ClipboardCheck } from "lucide-react"
 import { PageHeader } from "@/components/shared"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/primitives"
 import { Loading, ErrorState, Empty } from "@/components/states"
-import { useAccreditations, useSubmitAccreditation, useDocuments } from "@/api/hooks"
+import { useAccreditations, useSubmitAccreditation, useDocuments, useAccreditationDetail } from "@/api/hooks"
 import { statusLabel, ACCREDITATION_DOC_TYPES, type ChecklistItem } from "@/api/types"
 import { ApiError } from "@/api/client"
 import { cn } from "@/lib/utils"
@@ -32,13 +32,15 @@ export default function AccreditationPage() {
   const latest = history[0]
   const done = ALL_ITEMS.filter((i) => checked[i]).length
   const pct = Math.round((done / ALL_ITEMS.length) * 100)
-  const hasPending = latest?.status === "pending"
+  // A submission is blocked whenever there is an accreditation in ANY non-rejected state
+  // (pending, requirements_completed, inspection_scheduled, inspected, or an approved/valid cycle).
+  const inProgress = latest != null && latest.status !== "rejected"
   // A still-valid (approved) accreditation blocks a new/renew application.
   const isValidHeld = latest?.status === "approved" && !!latest?.valid_until && new Date(latest.valid_until).getTime() > Date.now()
 
   const uploaded = new Set<string>((docsQ.data ?? []).map((d) => d.type))
   const missing = ACCREDITATION_DOC_TYPES.filter((d) => !uploaded.has(d.value))
-  const canSubmit = missing.length === 0 && !hasPending && !isValidHeld
+  const canSubmit = missing.length === 0 && !inProgress && !isValidHeld
 
   const submissionType =
     latest?.valid_until && new Date(latest.valid_until).getTime() > Date.now() &&
@@ -64,11 +66,11 @@ export default function AccreditationPage() {
     <>
       <PageHeader
         title="Accreditation"
-        description={`Complete the checklist and submit for Accreditor and Admin review · This is a ${submissionType} application`}
+        description={`Complete the checklist and submit for review · This is a ${submissionType} application`}
         actions={
           <Button size="sm" onClick={onSubmit} disabled={submit.isPending || !canSubmit}>
             {submit.isPending ? <Loader2 className="animate-spin" /> : <Send />}
-            {hasPending ? "Submission pending" : "Submit for review"}
+            {inProgress ? "Application already in progress" : "Submit for review"}
           </Button>
         }
       />
@@ -79,9 +81,11 @@ export default function AccreditationPage() {
         </p>
       )}
 
-      {isValidHeld && (
+      {inProgress && (
         <p className="mb-4 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-[13px] text-blue-700">
-          Your institution already holds a valid accreditation{latest?.valid_until ? ` until ${new Date(latest.valid_until).toISOString().slice(0, 10)}` : ""}. A new or renewal application cannot be submitted unless the current one is rejected.
+          Your institution already has an accreditation application in progress
+          {latest?.status ? ` (status: ${statusLabel(latest.status)})` : ""}. A new application cannot be submitted
+          until the current one is rejected.
         </p>
       )}
 
@@ -110,6 +114,8 @@ export default function AccreditationPage() {
       <Tabs defaultValue="checklist" className="mt-4">
         <TabsList>
           <TabsTrigger value="checklist">Checklist</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="inspection">Inspection</TabsTrigger>
           <TabsTrigger value="history">History ({history.length})</TabsTrigger>
         </TabsList>
 
@@ -130,8 +136,9 @@ export default function AccreditationPage() {
                   <button
                     key={item.label}
                     type="button"
+                    disabled={inProgress}
                     onClick={() => setChecked((c) => ({ ...c, [item.label]: !c[item.label] }))}
-                    className="flex w-full items-center gap-2.5 rounded px-1 py-1.5 text-left transition-colors hover:bg-slate-50"
+                    className="flex w-full items-center gap-2.5 rounded px-1 py-1.5 text-left transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isChecked ? (
                       <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
@@ -155,10 +162,65 @@ export default function AccreditationPage() {
               <strong>Documents</strong> to enable submission.
             </p>
           )}
-          <p className="mt-3 text-[12px] text-slate-500">
-            Submitting sends this checklist to the Admin queue as{" "}
-            <code className="data-mono">checklist_snapshot</code>.
-          </p>
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <Card>
+            <CardHeader>
+              <CardTitle>Uploaded Documents</CardTitle>
+              <CardDescription>Files you submitted for this accreditation application.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {docsQ.isLoading ? (
+                <Loading label="Loading documents…" />
+              ) : (docsQ.data ?? []).length === 0 ? (
+                <Empty>No documents uploaded yet.</Empty>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>File</TableHead>
+                      <TableHead>Uploaded</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {docsQ.data!.map((d) => (
+                      <TableRow key={d.id}>
+                        <TableCell className="font-medium">{d.type}</TableCell>
+                        <TableCell>
+                          {d.file_path ? (
+                            <a
+                              className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                              href={`/storage/${d.file_path}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <FileText className="size-3.5" /> view
+                            </a>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell className="data-mono">{d.created_at?.slice(0, 10) ?? "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+            <CardFooter>
+              <p className="text-[12px] text-slate-500">
+                To add or replace files, use the <strong>Documents</strong> page.
+              </p>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="inspection">
+          {latest ? <InspectionView accreditationId={latest.id} /> : (
+            <Card><CardContent className="py-6"><Empty>No accreditation yet.</Empty></CardContent></Card>
+          )}
         </TabsContent>
 
         <TabsContent value="history">
@@ -207,5 +269,96 @@ export default function AccreditationPage() {
         </TabsContent>
       </Tabs>
     </>
+  )
+}
+
+function InspectionView({ accreditationId }: { accreditationId: number }) {
+  const q = useAccreditationDetail(accreditationId)
+  if (q.isLoading) return <Loading label="Loading inspection…" />
+  if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />
+
+  const data = q.data!
+  const inspection = data.accreditation.inspections?.[0]
+  const answers = (inspection?.answers ?? {}) as Record<string, { compliant: boolean; notes?: string }>
+  const items = data.checklist_items ?? []
+
+  if (!inspection) {
+    return (
+      <Card>
+        <CardContent className="py-6">
+          <Empty>
+            The accreditor has not captured the inspection checklist yet. It will appear here once the
+            scheduled inspection is completed.
+          </Empty>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const bySection: Record<string, typeof items> = {}
+  for (const it of items) (bySection[it.section] ??= []).push(it)
+
+  const compliantCount = items.filter((it) => answers[String(it.id)]?.compliant).length
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ClipboardCheck className="size-4" /> Captured Inspection Checklist
+        </CardTitle>
+        <CardDescription>
+          Completed by the accreditor
+          {inspection.conducted_at ? ` on ${inspection.conducted_at.slice(0, 10)}` : ""} ·
+          {" "}{compliantCount}/{items.length} criteria marked compliant
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {Object.keys(bySection).map((s) => (
+          <div key={s}>
+            <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-slate-500">Section {s}</h3>
+            <div className="space-y-2">
+              {bySection[s].map((it) => {
+                const ans = answers[String(it.id)]
+                return (
+                  <div key={it.id} className="rounded border border-slate-200 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-medium text-slate-800">
+                          {it.code ? `${it.code} ` : ""}{it.criterion}
+                        </p>
+                        {it.is_major && (
+                          <span className="mt-1 inline-block rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
+                            Major
+                          </span>
+                        )}
+                        {it.notes_hint && <p className="mt-1 text-[12px] text-slate-400">{it.notes_hint}</p>}
+                      </div>
+                      {ans ? (
+                        <span className={cn("shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold",
+                          ans.compliant ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
+                          {ans.compliant ? "Compliant" : "Not compliant"}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">—</span>
+                      )}
+                    </div>
+                    {ans?.notes && (
+                      <p className="mt-2 text-[12px] text-slate-600">
+                        <span className="font-medium">Notes:</span> {ans.notes}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </CardContent>
+      <CardFooter>
+        <p className="text-[12px] text-slate-500">
+          This is a read-only view of the accreditor's submitted inspection.
+        </p>
+      </CardFooter>
+    </Card>
   )
 }

@@ -166,6 +166,14 @@ export const useMarkRequirementsCompleted = () =>
 export const useGetChecklistItems = (enabled = true) =>
   useQuery({ queryKey: ["checklist-items"], queryFn: ep.getChecklistItems, enabled, retry: false })
 
+export const useAdminAccreditationDetail = (id: number | undefined, enabled = true) =>
+  useQuery({
+    queryKey: ["admin", "accreditation", "detail", id],
+    queryFn: () => ep.getAdminAccreditation(id as number),
+    enabled: enabled && id !== undefined,
+    retry: false,
+  })
+
 export const usePendingInspections = (enabled = true) =>
   useQuery({ queryKey: ["inspections", "pending"], queryFn: ep.pendingInspections, enabled, retry: false })
 
@@ -175,6 +183,14 @@ export const useSubmitInspection = () =>
       ep.submitInspection(v.id, v.answers),
     [["inspections", "pending"], qk.accreditations, qk.dashboard]
   )
+
+export const useAccreditationDetail = (id: number | undefined, enabled = true) =>
+  useQuery({
+    queryKey: ["accreditation", "detail", id],
+    queryFn: () => ep.getAccreditation(id as number),
+    enabled: enabled && id !== undefined,
+    retry: false,
+  })
 
 export const useCreateTrainingOfficer = () =>
   useInvalidating(ep.createTrainingOfficer, [qk.trainingOfficers])
