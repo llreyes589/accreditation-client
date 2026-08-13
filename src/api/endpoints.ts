@@ -12,6 +12,9 @@ import type {
   ConsultantEvaluation,
   RemediationPlan,
   PortfolioArchive,
+  Finding,
+  CorrectiveAction,
+  CorrectiveActionEvidence,
   DashboardResponse,
   Institution,
   InstitutionDocument,
@@ -388,6 +391,54 @@ export const createPortfolioArchive = (payload: {
   status?: "archived" | "sealed";
   archived_at?: string;
 }) => api<PortfolioArchive>("/portfolio-archives", { body: payload });
+
+/* Findings & Corrective Actions */
+export const listInspections = () =>
+  api<Array<AccreditationInspection & { accreditation: Accreditation & { institution?: Institution } }>>(
+    "/staff/inspections"
+  );
+
+export const listFindings = () => api<Finding[]>("/staff/findings");
+
+export const createFinding = (payload: {
+  accreditation_inspection_id: number;
+  checklist_item_id?: number;
+  title: string;
+  description: string;
+  severity?: "major" | "minor";
+}) => api<Finding>("/staff/findings", { body: payload });
+
+export const listCorrectiveActions = (findingId?: number) =>
+  api<CorrectiveAction[]>(`/corrective-actions${findingId ? `?finding_id=${findingId}` : ""}`);
+
+export const createCorrectiveAction = (payload: {
+  finding_id: number;
+  action_plan: string;
+  due_date?: string;
+  assigned_to?: number;
+}) => api<CorrectiveAction>("/corrective-actions", { body: payload });
+
+export const uploadEvidence = (actionId: number, file: File) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  return api<CorrectiveActionEvidence>(`/corrective-actions/${actionId}/evidence`, {
+    method: "POST",
+    form: fd,
+  });
+};
+
+export const resolveCorrectiveAction = (actionId: number) =>
+  api<CorrectiveAction>(`/corrective-actions/${actionId}/resolve`, { method: "POST" });
+
+export const verifyCorrectiveAction = (
+  actionId: number,
+  decision: "verified" | "rejected",
+  comment?: string,
+) =>
+  api<CorrectiveAction>(`/staff/corrective-actions/${actionId}/verify`, {
+    method: "POST",
+    body: { decision, comment },
+  });
 
 /* =========================================================
    ADMIN  (prefix /admin, role:Admin)

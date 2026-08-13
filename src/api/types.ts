@@ -351,5 +351,53 @@ export interface PortfolioArchive {
   resident?: Resident
 }
 
+/* ---- Findings & Corrective Actions module ---- */
+
+export interface Finding {
+  id: number
+  accreditation_inspection_id: number
+  checklist_item_id: number | null
+  title: string
+  description: string
+  severity: "major" | "minor"
+  status: "open" | "in_progress" | "resolved" | "verified" | "rejected"
+  raised_by: number | null
+  created_at: string
+  checklist_item?: InspectionChecklistItem | null
+  raised_by_user?: User | null
+  actions?: CorrectiveAction[]
+}
+
+export interface CorrectiveAction {
+  id: number
+  finding_id: number
+  action_plan: string
+  due_date: string | null
+  status: "open" | "in_progress" | "resolved" | "verified" | "reopened"
+  assigned_to: number | null
+  created_by: number | null
+  created_at: string
+  evidence?: CorrectiveActionEvidence[]
+  status_logs?: CorrectiveActionStatusLog[]
+  finding?: Finding
+}
+
+export interface CorrectiveActionEvidence {
+  id: number
+  corrective_action_id: number
+  file_path: string
+  original_name: string | null
+  uploaded_by: number | null
+}
+
+export interface CorrectiveActionStatusLog {
+  id: number
+  corrective_action_id: number
+  status: string
+  comment: string | null
+  actor_id: number | null
+  logged_at: string
+}
+
 export const roleLabel = (r?: RoleName | string | null) =>
   r === "TrainingOfficer" ? "Training Officer" : (r ?? "—")

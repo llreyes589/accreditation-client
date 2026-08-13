@@ -25,6 +25,7 @@ import SettingsPage from "@/pages/settings"
 import LoginPage from "@/pages/login"
 import PendingPage from "@/pages/pending"
 import InspectionPage from "@/pages/inspection"
+import FindingsPage from "@/pages/findings"
 import { RegisterInstitutionPage, RegisterResidentPage } from "@/pages/register"
 
 const queryClient = new QueryClient({
@@ -91,6 +92,7 @@ function Router() {
         <Route path="documents" element={<Protected roles={TO}><DocumentsPage /></Protected>} />
         <Route path="inspection" element={<Protected roles={ACCREDITOR}><InspectionPage /></Protected>} />
         <Route path="inspection/:id" element={<Protected roles={ACCREDITOR}><InspectionPage /></Protected>} />
+        <Route path="findings" element={<Protected roles={[...TO, ...ACCREDITOR, ...ADMIN]}><FindingsPage /></Protected>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

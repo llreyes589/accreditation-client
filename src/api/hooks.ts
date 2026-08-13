@@ -265,6 +265,45 @@ export const usePortfolioArchives = (enabled = true) =>
 export const useCreatePortfolioArchive = () =>
   useInvalidating(ep.createPortfolioArchive, [["portfolioArchives"], qk.residents])
 
+/* Findings & Corrective Actions */
+export const useInspections = (enabled = true) =>
+  useQuery({ queryKey: ["staff", "inspections"], queryFn: ep.listInspections, enabled })
+
+export const useFindings = (enabled = true) =>
+  useQuery({ queryKey: ["staff", "findings"], queryFn: ep.listFindings, enabled })
+
+export const useCreateFinding = () =>
+  useInvalidating(ep.createFinding, [["staff", "findings"]])
+
+export const useCorrectiveActions = (findingId?: number, enabled = true) =>
+  useQuery({
+    queryKey: ["correctiveActions", findingId ?? "all"],
+    queryFn: () => ep.listCorrectiveActions(findingId),
+    enabled,
+  })
+
+export const useCreateCorrectiveAction = () =>
+  useInvalidating(ep.createCorrectiveAction, [["staff", "findings"], ["correctiveActions", "all"]])
+
+export const useUploadEvidence = () =>
+  useInvalidating(
+    (v: { actionId: number; file: File }) => ep.uploadEvidence(v.actionId, v.file),
+    [["staff", "findings"], ["correctiveActions", "all"]]
+  )
+
+export const useResolveCorrectiveAction = () =>
+  useInvalidating(
+    (actionId: number) => ep.resolveCorrectiveAction(actionId),
+    [["staff", "findings"], ["correctiveActions", "all"]]
+  )
+
+export const useVerifyCorrectiveAction = () =>
+  useInvalidating(
+    (v: { actionId: number; decision: "verified" | "rejected"; comment?: string }) =>
+      ep.verifyCorrectiveAction(v.actionId, v.decision, v.comment),
+    [["staff", "findings"], ["correctiveActions", "all"]]
+  )
+
 export const useReadNotification = () =>
   useInvalidating(ep.readNotification, [qk.notifications, qk.dashboard])
 

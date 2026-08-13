@@ -14,6 +14,7 @@ import {
   ArrowLeftRight,
   Settings2,
   LifeBuoy,
+  AlertTriangle,
   X,
 } from "lucide-react"
 import type { RoleName } from "@/api/types"
@@ -37,6 +38,7 @@ export const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ALL },
   { to: "/approvals", label: "Approvals", icon: ShieldCheck, roles: ADMIN },
   { to: "/inspection", label: "Inspections", icon: ClipboardCheck, roles: ACCREDITOR },
+  { to: "/findings", label: "Findings & Actions", icon: AlertTriangle, roles: [ ...TO, ...ACCREDITOR, ...ADMIN ] },
   { to: "/institutions", label: "Institutions", icon: Building2, roles: ALL },
   { to: "/institution-profile", label: "Institution Profile", icon: Building2, roles: TO },
   { to: "/accreditation", label: "Accreditation", icon: FileText, roles: TO },
