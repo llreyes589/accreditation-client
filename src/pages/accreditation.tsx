@@ -32,21 +32,29 @@ export default function AccreditationPage() {
   const latest = history[0]
   const done = ALL_ITEMS.filter((i) => checked[i]).length
   const pct = Math.round((done / ALL_ITEMS.length) * 100)
-  // A submission is blocked whenever there is an accreditation in ANY non-rejected state
-  // (pending, requirements_completed, inspection_scheduled, inspected, or an approved/valid cycle).
-  const inProgress = latest != null && latest.status !== "rejected"
-  // A still-valid (approved) accreditation blocks a new/renew application.
-  const isValidHeld = latest?.status === "approved" && !!latest?.valid_until && new Date(latest.valid_until).getTime() > Date.now()
+
+  // Submission is permitted when there is no prior accreditation (first application),
+  // the latest was REJECTED (re-apply), or the latest is an approved/probationary cycle that is
+  // DUE FOR RENEWAL (valid_until is past or within the 90-day renewal window).
+  const isRejected = latest?.status === "rejected"
+  const isHeldCycle = latest?.status === "approved" || latest?.status === "probationary"
+  const inProgress = latest != null && !isRejected && !isHeldCycle
+  const dueForRenewal =
+    isHeldCycle &&
+    latest?.valid_until != null &&
+    new Date(latest.valid_until).getTime() <= Date.now() + 90 * 86_400_000
+  const noAccreditation = latest == null
 
   const uploaded = new Set<string>((docsQ.data ?? []).map((d) => d.type))
   const missing = ACCREDITATION_DOC_TYPES.filter((d) => !uploaded.has(d.value))
-  const canSubmit = missing.length === 0 && !inProgress && !isValidHeld
+  const canSubmit = missing.length === 0 && (noAccreditation || isRejected || dueForRenewal)
 
   const submissionType =
-    latest?.valid_until && new Date(latest.valid_until).getTime() > Date.now() &&
-    new Date(latest.valid_until).getTime() <= Date.now() + 90 * 86_400_000
-      ? "Renew"
-      : "New"
+    isRejected
+      ? "New"
+      : dueForRenewal
+        ? "Renew"
+        : "New"
 
   async function onSubmit() {
     setErr(null)
@@ -70,7 +78,7 @@ export default function AccreditationPage() {
         actions={
           <Button size="sm" onClick={onSubmit} disabled={submit.isPending || !canSubmit}>
             {submit.isPending ? <Loader2 className="animate-spin" /> : <Send />}
-            {inProgress ? "Application already in progress" : "Submit for review"}
+            {inProgress ? "Application already in progress" : dueForRenewal ? "Submit renewal" : "Submit for review"}
           </Button>
         }
       />
@@ -85,7 +93,15 @@ export default function AccreditationPage() {
         <p className="mb-4 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-[13px] text-blue-700">
           Your institution already has an accreditation application in progress
           {latest?.status ? ` (status: ${statusLabel(latest.status)})` : ""}. A new application cannot be submitted
-          until the current one is rejected.
+          until the current one is resolved.
+        </p>
+      )}
+
+      {!canSubmit && !inProgress && latest && (
+        <p className="mb-4 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-[13px] text-blue-700">
+          Your current accreditation is still valid and not yet due for renewal. A renewal application can be
+          submitted once the validity period ends or enters the 90-day renewal window
+          {latest?.valid_until ? ` (valid until ${latest.valid_until})` : ""}.
         </p>
       )}
 
