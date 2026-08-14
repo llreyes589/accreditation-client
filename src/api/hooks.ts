@@ -307,6 +307,12 @@ export const useVerifyCorrectiveAction = () =>
 export const useReadNotification = () =>
   useInvalidating(ep.readNotification, [qk.notifications, qk.dashboard])
 
+export const useNotificationPreferences = (enabled = true) =>
+  useQuery({ queryKey: ["notification-preferences"], queryFn: ep.notificationPreferences, enabled, retry: false })
+
+export const useUpdateNotificationPreferences = () =>
+  useInvalidating(ep.updateNotificationPreferences, [["notification-preferences"]])
+
 /* admin */
 export const useApproveUser = () => useInvalidating(ep.approveUser, [qk.adminPending])
 export const useRejectUser = () =>

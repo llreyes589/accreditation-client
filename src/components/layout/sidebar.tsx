@@ -15,6 +15,8 @@ import {
   Settings2,
   LifeBuoy,
   AlertTriangle,
+  Bell,
+  FileSpreadsheet,
   X,
 } from "lucide-react"
 import type { RoleName } from "@/api/types"
@@ -39,6 +41,8 @@ export const navItems: NavItem[] = [
   { to: "/approvals", label: "Approvals", icon: ShieldCheck, roles: ADMIN },
   { to: "/inspection", label: "Inspections", icon: ClipboardCheck, roles: ACCREDITOR },
   { to: "/findings", label: "Findings & Actions", icon: AlertTriangle, roles: [ ...TO, ...ACCREDITOR, ...ADMIN ] },
+  { to: "/notifications", label: "Notifications", icon: Bell, roles: ALL },
+  { to: "/reports", label: "Reports", icon: FileSpreadsheet, roles: [ ...TO, ...ACCREDITOR, ...ADMIN ] },
   { to: "/institutions", label: "Institutions", icon: Building2, roles: ALL },
   { to: "/institution-profile", label: "Institution Profile", icon: Building2, roles: TO },
   { to: "/accreditation", label: "Accreditation", icon: FileText, roles: TO },

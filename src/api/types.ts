@@ -265,6 +265,16 @@ export interface AppNotification {
   created_at: string
 }
 
+export interface NotificationPreference {
+  id: number
+  user_id: number
+  category: "deadline_reminder" | "status_change" | "system"
+  channel: "database" | "email" | "in_app"
+  enabled: boolean
+  quiet_hours_start: string | null
+  quiet_hours_end: string | null
+}
+
 export interface Paginated<T> {
   data: T[]
   current_page: number

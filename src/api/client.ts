@@ -31,6 +31,48 @@ type Options = {
   signal?: AbortSignal
 }
 
+export async function apiBlob(path: string, opts: Options = {}): Promise<Blob> {
+  const token = tokenStore.get()
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  let body: BodyInit | undefined
+  if (opts.form) {
+    body = opts.form
+  } else if (opts.body !== undefined) {
+    headers["Content-Type"] = "application/json"
+    body = JSON.stringify(opts.body)
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: opts.method ?? (body ? "POST" : "GET"),
+    headers,
+    body,
+    signal: opts.signal,
+  })
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      tokenStore.clear()
+      if (!location.pathname.startsWith("/login")) location.href = "/login"
+    }
+    throw new ApiError(res.status, `Request failed (${res.status})`)
+  }
+  return res.blob()
+}
+
+/** Trigger a browser download for a Blob. */
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
 export async function api<T>(path: string, opts: Options = {}): Promise<T> {
   const token = tokenStore.get()
   const headers: Record<string, string> = { Accept: "application/json" }

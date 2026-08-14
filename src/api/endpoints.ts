@@ -1,4 +1,4 @@
-import { api } from "./client";
+import { api, apiBlob } from "./client";
 import type {
   AdminPending,
   Accreditation,
@@ -21,6 +21,7 @@ import type {
   InstitutionDocument,
   InspectionChecklistItem,
   LoginResponse,
+  NotificationPreference,
   Paginated,
   PendingApproval,
   PlacesResult,
@@ -139,6 +140,38 @@ export const notifications = () =>
 
 export const readNotification = (id: string) =>
   api<AppNotification>(`/notifications/${id}/read`, { method: "POST" });
+
+export const notificationPreferences = () =>
+  api<NotificationPreference[]>("/notification-preferences");
+
+export const updateNotificationPreferences = (
+  preferences: Array<{
+    category: NotificationPreference["category"];
+    channel: NotificationPreference["channel"];
+    enabled?: boolean;
+    quiet_hours_start?: string | null;
+    quiet_hours_end?: string | null;
+  }>,
+) => api<NotificationPreference[]>("/notification-preferences", { method: "PUT", body: { preferences } });
+
+/* Reports (CSV streamed download) */
+type ReportFilters = {
+  institution_id?: number;
+  date_from?: string;
+  date_to?: string;
+  status?: string;
+  outcome?: string;
+  severity?: string;
+};
+
+export const downloadReport = (kind: "accreditations" | "renewals" | "findings" | "inspections", filters: ReportFilters = {}) => {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
+  });
+  const qs = params.toString();
+  return apiBlob(`/reports/${kind}${qs ? `?${qs}` : ""}`);
+};
 
 /* =========================================================
    TRAINING OFFICER  (role:TrainingOfficer)
