@@ -313,10 +313,20 @@ export const useRejectUser = () =>
   useInvalidating((v: { userId: number; reason: string }) => ep.rejectUser(v.userId, v.reason), [
     qk.adminPending,
   ])
-export const useApproveAccreditation = () =>
-  useInvalidating(ep.approveAccreditation, [qk.adminPending])
-export const useRejectAccreditation = () =>
-  useInvalidating(ep.rejectAccreditation, [qk.adminPending])
+export const useRecordDecision = () =>
+  useInvalidating(
+    (v: { id: number; payload: { outcome: "approved" | "probationary" | "rejected"; notes?: string; valid_until?: string } }) =>
+      ep.recordDecision(v.id, v.payload),
+    [qk.adminPending],
+  )
+export const useDraftDecision = () =>
+  useInvalidating(
+    (v: { id: number; payload: { outcome: "draft"; notes?: string } }) =>
+      ep.draftDecision(v.id, v.payload),
+    [qk.adminPending],
+  )
+export const useAccreditationDecisions = (id: number) =>
+  useQuery({ queryKey: ["accDecisions", id], queryFn: () => ep.listDecisions(id) })
 export const useCreateStaff = () => useInvalidating(ep.createStaff, [qk.adminPending])
 export const useUpdateSettings = () => useInvalidating(ep.updateSettings, [])
 

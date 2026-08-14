@@ -44,8 +44,8 @@ import {
   useAdminPending,
   useApproveUser,
   useRejectUser,
-  useApproveAccreditation,
-  useRejectAccreditation,
+  useRecordDecision,
+  useDraftDecision,
   useCreateStaff,
   useScheduleInspection,
   useMarkRequirementsCompleted,
@@ -53,21 +53,27 @@ import {
 } from "@/api/hooks";
 import { roleLabel, statusLabel, ACCREDITATION_DOC_TYPES } from "@/api/types";
 import { ApiError } from "@/api/client";
+import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/utils";
 
 export default function ApprovalsPage() {
   const q = useAdminPending();
   const approve = useApproveUser();
   const reject = useRejectUser();
-  const approveAcc = useApproveAccreditation();
-  const rejectAcc = useRejectAccreditation();
+  const recordDecision = useRecordDecision();
+  const draftDecision = useDraftDecision();
   const scheduleInspection = useScheduleInspection();
   const markComplete = useMarkRequirementsCompleted();
+  const { hasRole } = useAuth();
 
   const [rejecting, setRejecting] = React.useState<number | null>(null);
   const [reason, setReason] = React.useState("");
   const [schedDate, setSchedDate] = React.useState<Record<number, string>>({});
   const [selected, setSelected] = React.useState<number | null>(null);
+  const [deciding, setDeciding] = React.useState<number | null>(null);
+  const [decisionOutcome, setDecisionOutcome] = React.useState<"approved" | "probationary" | "rejected">("approved");
+  const [decisionNotes, setDecisionNotes] = React.useState("");
+  const [decisionValidUntil, setDecisionValidUntil] = React.useState("");
 
   if (q.isLoading) return <Loading label="Loading approval queue…" />;
   if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />;
@@ -279,6 +285,12 @@ export default function ApprovalsPage() {
                           </TableCell>
                           <TableCell>
                             <StatusBadge status={statusLabel(a.status)} />
+                            {a.decisions && a.decisions.length > 0 && (
+                              <p className="mt-1 text-[11px] text-slate-500">
+                                {a.decisions.length} decision
+                                {a.decisions.length > 1 ? "s" : ""} recorded
+                              </p>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex flex-col items-end gap-2">
@@ -291,23 +303,32 @@ export default function ApprovalsPage() {
                                 View Checklist
                               </Button>
                               <div className="flex justify-end gap-2">
+                                {hasRole("Accreditor") && a.status === "inspected" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={draftDecision.isPending}
+                                    onClick={() =>
+                                      draftDecision.mutate({
+                                        id: a.id,
+                                        payload: { outcome: "draft", notes: decisionNotes },
+                                      })
+                                    }
+                                  >
+                                    Draft
+                                  </Button>
+                                )}
                                 <Button
-                                  variant="outline"
                                   size="sm"
-                                  disabled={rejectAcc.isPending}
-                                  onClick={() => rejectAcc.mutate(a.id)}
+                                  disabled={recordDecision.isPending || a.status !== "inspected"}
+                                  onClick={() => {
+                                    setDeciding(a.id);
+                                    setDecisionOutcome("approved");
+                                    setDecisionNotes("");
+                                    setDecisionValidUntil("");
+                                  }}
                                 >
-                                  <X /> Reject
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  disabled={
-                                    approveAcc.isPending ||
-                                    a.status !== "inspected"
-                                  }
-                                  onClick={() => approveAcc.mutate(a.id)}
-                                >
-                                  <Check /> Approve
+                                  <Check /> Decide
                                 </Button>
                               </div>
                               {a.status === "pending" && (
@@ -412,6 +433,78 @@ export default function ApprovalsPage() {
               }}
             >
               {reject.isPending && <Loader2 className="animate-spin" />} Reject
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Final accreditation decision: approved / probationary / rejected (human decision required) */}
+      <Dialog
+        open={deciding != null}
+        onOpenChange={(o) => !o && setDeciding(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record accreditation decision</DialogTitle>
+            <DialogDescription>
+              A human decision is required. This is recorded in the permanent decision ledger.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Outcome</Label>
+              <Select
+                value={decisionOutcome}
+                onChange={(e) =>
+                  setDecisionOutcome(e.target.value as "approved" | "probationary" | "rejected")
+                }
+              >
+                <option value="approved">Approved</option>
+                <option value="probationary">Probationary</option>
+                <option value="rejected">Rejected</option>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Notes</Label>
+              <Input
+                value={decisionNotes}
+                maxLength={2000}
+                onChange={(e) => setDecisionNotes(e.target.value)}
+                placeholder="Decision rationale (stored in the ledger)"
+              />
+            </div>
+            {decisionOutcome !== "rejected" && (
+              <div className="space-y-1.5">
+                <Label>Valid until (optional)</Label>
+                <Input
+                  type="date"
+                  value={decisionValidUntil}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setDecisionValidUntil(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              disabled={recordDecision.isPending}
+              onClick={async () => {
+                await recordDecision.mutateAsync({
+                  id: deciding!,
+                  payload: {
+                    outcome: decisionOutcome,
+                    notes: decisionNotes || undefined,
+                    valid_until: decisionValidUntil || undefined,
+                  },
+                });
+                setDeciding(null);
+              }}
+            >
+              {recordDecision.isPending && <Loader2 className="animate-spin" />} Record decision
             </Button>
           </div>
         </DialogContent>

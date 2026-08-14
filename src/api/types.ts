@@ -182,11 +182,24 @@ export interface Accreditation {
   approved_by: number | null
   valid_from: string | null
   valid_until: string | null
-  status: "pending" | "requirements_completed" | "inspection_scheduled" | "inspected" | "approved" | "rejected"
+  status: "pending" | "requirements_completed" | "inspection_scheduled" | "inspected" | "approved" | "probationary" | "rejected"
   submission_type?: "new" | "renew" | null
   inspection_scheduled_at?: string | null
   submitted_at?: string | null
   institution?: Institution
+  decisions?: AccreditationDecision[]
+}
+
+export interface AccreditationDecision {
+  id: number
+  accreditation_id: number
+  outcome: "draft" | "approved" | "probationary" | "rejected"
+  notes: string | null
+  valid_from: string | null
+  valid_until: string | null
+  decided_by: number | null
+  decided_at: string
+  decider?: User | null
 }
 
 /** The 9 supporting documents required to apply for/renew accreditation. */

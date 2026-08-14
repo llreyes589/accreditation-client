@@ -15,6 +15,7 @@ import type {
   Finding,
   CorrectiveAction,
   CorrectiveActionEvidence,
+  AccreditationDecision,
   DashboardResponse,
   Institution,
   InstitutionDocument,
@@ -460,11 +461,19 @@ export const approveUser = (userId: number) =>
 export const rejectUser = (userId: number, reason: string) =>
   api<User>(`/admin/users/${userId}/reject`, { body: { reason } });
 
-export const approveAccreditation = (id: number) =>
-  api<Accreditation>(`/admin/accreditations/${id}/approve`, { method: "POST" });
+export const recordDecision = (id: number, payload: {
+  outcome: "approved" | "probationary" | "rejected";
+  notes?: string;
+  valid_until?: string;
+}) => api<Accreditation>(`/staff/accreditations/${id}/decision`, { method: "POST", body: payload });
 
-export const rejectAccreditation = (id: number) =>
-  api<Accreditation>(`/admin/accreditations/${id}/reject`, { method: "POST" });
+export const draftDecision = (id: number, payload: {
+  outcome: "draft";
+  notes?: string;
+}) => api<AccreditationDecision>(`/accreditor/accreditations/${id}/decision-draft`, { method: "POST", body: payload });
+
+export const listDecisions = (id: number) =>
+  api<{ accreditation_id: number; decisions: AccreditationDecision[] }>(`/staff/accreditations/${id}/decisions`);
 
 export const updateSettings = (settings: {
   track_durations?: Record<string, number>;
