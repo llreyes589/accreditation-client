@@ -50,8 +50,13 @@ import {
   useScheduleInspection,
   useMarkRequirementsCompleted,
   useAdminAccreditationDetail,
+  useListAccreditors,
+  useAssignAccreditor,
+  useChangeLeadAccreditor,
+  useRemoveAccreditor,
 } from "@/api/hooks";
 import { roleLabel, statusLabel, ACCREDITATION_DOC_TYPES } from "@/api/types";
+import type { InspectionAccreditor } from "@/api/types";
 import { ApiError } from "@/api/client";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/utils";
@@ -69,6 +74,7 @@ export default function ApprovalsPage() {
   const [rejecting, setRejecting] = React.useState<number | null>(null);
   const [reason, setReason] = React.useState("");
   const [schedDate, setSchedDate] = React.useState<Record<number, string>>({});
+  const [scheduledFor, setScheduledFor] = React.useState<number | null>(null);
   const [selected, setSelected] = React.useState<number | null>(null);
   const [deciding, setDeciding] = React.useState<number | null>(null);
   const [decisionOutcome, setDecisionOutcome] = React.useState<"approved" | "probationary" | "rejected">("approved");
@@ -363,15 +369,25 @@ export default function ApprovalsPage() {
                                       !schedDate[a.id]
                                     }
                                     onClick={() =>
-                                      scheduleInspection.mutate({
-                                        id: a.id,
-                                        date: schedDate[a.id],
-                                      })
+                                      scheduleInspection.mutate(
+                                        {
+                                          id: a.id,
+                                          date: schedDate[a.id],
+                                        },
+                                        {
+                                          onSuccess: () => setScheduledFor(a.id),
+                                        },
+                                      )
                                     }
                                   >
                                     Schedule inspection
                                   </Button>
                                 </div>
+                              )}
+                              {scheduledFor === a.id && (
+                                <span className="text-[12px] text-emerald-600">
+                                  Inspection scheduled.
+                                </span>
                               )}
                               {a.status === "inspection_scheduled" &&
                                 a.inspection_scheduled_at && (
@@ -605,6 +621,141 @@ function CreateStaffDialog() {
   );
 }
 
+function InspectionAssignment({
+  accreditationId,
+  inspection,
+}: {
+  accreditationId: number
+  inspection: { id: number; accreditors?: InspectionAccreditor[] }
+}) {
+  const accreditorsQ = useListAccreditors()
+  const assign = useAssignAccreditor()
+  const changeLead = useChangeLeadAccreditor()
+  const remove = useRemoveAccreditor()
+  const [role, setRole] = React.useState<"lead" | "member">("member")
+  const [err, setErr] = React.useState<string | null>(null)
+
+  const assigned = inspection.accreditors ?? []
+  const options = (accreditorsQ.data?.accreditors ?? []).filter(
+    (u) => !assigned.some((a) => a.id === u.id),
+  )
+
+  const onAssign = async (userId: number) => {
+    setErr(null)
+    try {
+      await assign.mutateAsync({ accreditationId, inspectionId: inspection.id, userId, role })
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.firstError : "Failed to assign accreditor.")
+    }
+  }
+  const onMakeLead = async (userId: number) => {
+    setErr(null)
+    try {
+      await changeLead.mutateAsync({ accreditationId, inspectionId: inspection.id, userId })
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.firstError : "Failed to change lead accreditor.")
+    }
+  }
+  const onRemove = async (assignmentId: number) => {
+    setErr(null)
+    try {
+      await remove.mutateAsync({ accreditationId, inspectionId: inspection.id, assignmentId })
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.firstError : "Failed to remove accreditor.")
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {err && (
+        <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">{err}</p>
+      )}
+      <div className="flex items-end gap-2">
+        <div className="flex-1 space-y-1.5">
+          <Label>Assign accreditor</Label>
+          <Select
+            value={String(role)}
+            onChange={(e) => setRole(e.target.value as "lead" | "member")}
+          >
+            <option value="member">Member</option>
+            <option value="lead">Lead</option>
+          </Select>
+        </div>
+        <div className="flex-1 space-y-1.5">
+          <Label>Accreditor</Label>
+          <Select
+            defaultValue=""
+            disabled={options.length === 0}
+            onChange={(e) => {
+              const id = Number(e.target.value)
+              if (id) onAssign(id)
+            }}
+          >
+            <option value="">{options.length ? "Select…" : "No accreditors available"}</option>
+            {options.map((u) => (
+              <option key={u.id} value={String(u.id)}>
+                {u.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      </div>
+
+      <div className="rounded border border-slate-200">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Accreditor</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {assigned.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4}>
+                  <Empty>No accreditors assigned yet.</Empty>
+                </TableCell>
+              </TableRow>
+            ) : (
+              assigned.map((a) => (
+                <TableRow key={a.id}>
+                  <TableCell className="font-medium">{a.name}</TableCell>
+                  <TableCell>
+                    {a.pivot.role === "lead" ? (
+                      <Badge>Lead</Badge>
+                    ) : (
+                      <Badge variant="outline">Member</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-[12px] text-slate-500">{a.pivot.status}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      {a.pivot.role !== "lead" && (
+                        <Button size="sm" variant="outline" onClick={() => onMakeLead(a.id)}>
+                          Make lead
+                        </Button>
+                      )}
+                      <Button size="sm" variant="destructive" onClick={() => onRemove(a.id)}>
+                        Remove
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <p className="text-[12px] text-slate-400">
+        An accreditor may be assigned to at most 3 inspections per day (lead or member). The lead
+        submits the captured checklist.
+      </p>
+    </div>
+  )
+}
+
 function AccreditationDetailDialog({
   accreditationId,
   onClose,
@@ -655,6 +806,9 @@ function AccreditationDetailDialog({
             <TabsList>
               <TabsTrigger value="documents">Documents</TabsTrigger>
               <TabsTrigger value="inspection">Inspection Checklist</TabsTrigger>
+              {data.accreditation.status === "inspection_scheduled" && (
+                <TabsTrigger value="assignment">Assignment</TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="documents">
@@ -794,6 +948,31 @@ function AccreditationDetailDialog({
                 </Card>
               )}
             </TabsContent>
+            {data.accreditation.status === "inspection_scheduled" && (() => {
+              const pending = data.accreditation.inspections?.find(
+                (i) => i.status === "pending",
+              )
+              if (!pending) return null
+              return (
+                <TabsContent value="assignment">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Inspection Assignment</CardTitle>
+                      <CardDescription>
+                        Assign a lead and member accreditors. Assignment is possible during
+                        scheduling or afterwards.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <InspectionAssignment
+                        accreditationId={data.accreditation.id}
+                        inspection={pending}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )
+            })()}
           </Tabs>
         )}
       </DialogContent>

@@ -163,6 +163,30 @@ export const useMarkRequirementsCompleted = () =>
     [qk.adminPending]
   )
 
+export const useListAccreditors = () =>
+  useQuery({ queryKey: ["accreditors"], queryFn: ep.listAccreditors, retry: false })
+
+export const useAssignAccreditor = () =>
+  useInvalidating(
+    (v: { accreditationId: number; inspectionId: number; userId: number; role: "lead" | "member" }) =>
+      ep.assignAccreditor(v.accreditationId, v.inspectionId, v.userId, v.role),
+    [["admin", "accreditation", "detail"], qk.adminPending],
+  )
+
+export const useChangeLeadAccreditor = () =>
+  useInvalidating(
+    (v: { accreditationId: number; inspectionId: number; userId: number }) =>
+      ep.changeLeadAccreditor(v.accreditationId, v.inspectionId, v.userId),
+    [["admin", "accreditation", "detail"], qk.adminPending],
+  )
+
+export const useRemoveAccreditor = () =>
+  useInvalidating(
+    (v: { accreditationId: number; inspectionId: number; assignmentId: number }) =>
+      ep.removeAccreditor(v.accreditationId, v.inspectionId, v.assignmentId),
+    [["admin", "accreditation", "detail"], qk.adminPending],
+  )
+
 export const useGetChecklistItems = (enabled = true) =>
   useQuery({ queryKey: ["checklist-items"], queryFn: ep.getChecklistItems, enabled, retry: false })
 
@@ -274,6 +298,12 @@ export const useFindings = (enabled = true) =>
 
 export const useCreateFinding = () =>
   useInvalidating(ep.createFinding, [["staff", "findings"]])
+
+export const useApproveFinding = () =>
+  useInvalidating(
+    (findingId: number) => ep.approveFinding(findingId),
+    [["staff", "findings"], ["accreditation", "detail"], ["admin", "accreditation", "detail"]],
+  )
 
 export const useCorrectiveActions = (findingId?: number, enabled = true) =>
   useQuery({

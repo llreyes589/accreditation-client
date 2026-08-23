@@ -173,6 +173,18 @@ export interface AccreditationInspection {
   conducted_at: string | null
   status: "pending" | "submitted"
   answers: Record<string, { compliant: boolean; notes?: string }> | null
+  accreditors?: InspectionAccreditor[]
+  accreditor?: { id: number; name: string } | null
+}
+
+export interface InspectionAccreditor {
+  id: number
+  name: string
+  email: string
+  pivot: {
+    role: "lead" | "member"
+    status: "invited" | "accepted" | "declined" | "removed"
+  }
 }
 
 export interface Accreditation {
@@ -188,6 +200,7 @@ export interface Accreditation {
   submitted_at?: string | null
   institution?: Institution
   decisions?: AccreditationDecision[]
+  inspections?: AccreditationInspection[]
 }
 
 export interface AccreditationDecision {

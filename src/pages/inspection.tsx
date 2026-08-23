@@ -1,6 +1,6 @@
 import * as React from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
-import { CheckCircle2, ClipboardCheck, Loader2 } from "lucide-react"
+import { CheckCircle2, ClipboardCheck, Loader2, UserCheck } from "lucide-react"
 import { PageHeader } from "@/components/shared"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import {
   useGetChecklistItems,
   useSubmitInspection,
 } from "@/api/hooks"
+import { useAuth } from "@/context/auth"
 import type { InspectionChecklistItem } from "@/api/types"
 import { ApiError } from "@/api/client"
 
@@ -29,9 +30,15 @@ const SECTION_TITLES: Record<string, string> = {
 type Answer = { compliant: boolean; notes: string }
 type Answers = Record<string, Answer>
 
+function leadOf(inspections?: { accreditor?: { id: number; name: string } | null }[]) {
+  const pending = inspections?.find((i) => i.accreditor)
+  return pending?.accreditor ?? null
+}
+
 function InspectionList() {
   const q = usePendingInspections()
   const nav = useNavigate()
+  const { user } = useAuth()
   if (q.isLoading) return <Loading label="Loading inspections…" />
   if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />
   const list = q.data ?? []
@@ -46,23 +53,39 @@ function InspectionList() {
           <Empty>No inspections scheduled.</Empty>
         ) : (
           <div className="space-y-2">
-            {list.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-center justify-between rounded border border-slate-200 px-3 py-2"
-              >
-                <div>
-                  <p className="font-semibold">{a.institution?.name ?? `Institution #${a.institution_id}`}</p>
-                  <p className="data-mono text-slate-400">
-                    ACC-{a.id}
-                    {a.inspection_scheduled_at ? ` · ${a.inspection_scheduled_at.slice(0, 10)}` : ""}
-                  </p>
+            {list.map((a) => {
+              const lead = leadOf(a.inspections)
+              const isLead = !!lead && !!user && lead.id === user.id
+              return (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between rounded border border-slate-200 px-3 py-2"
+                >
+                  <div>
+                    <p className="font-semibold">{a.institution?.name ?? `Institution #${a.institution_id}`}</p>
+                    <p className="data-mono text-slate-400">
+                      ACC-{a.id}
+                      {a.inspection_scheduled_at ? ` · ${a.inspection_scheduled_at.slice(0, 10)}` : ""}
+                    </p>
+                    {lead && (
+                      <p className="mt-0.5 flex items-center gap-1 text-[12px] text-slate-500">
+                        <UserCheck className="size-3" /> Lead: {lead.name}
+                        {isLead ? " (you)" : ""}
+                      </p>
+                    )}
+                  </div>
+                  {isLead ? (
+                    <Button size="sm" onClick={() => nav(`/inspection/${a.id}`)}>
+                      <ClipboardCheck /> Capture checklist
+                    </Button>
+                  ) : (
+                    <Badge variant="outline" className="text-[11px]">
+                      {lead ? "Assigned to another lead" : "No lead assigned"}
+                    </Badge>
+                  )}
                 </div>
-                <Button size="sm" onClick={() => nav(`/inspection/${a.id}`)}>
-                  <ClipboardCheck /> Capture checklist
-                </Button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </CardContent>
@@ -75,6 +98,7 @@ function InspectionForm({ id }: { id: string }) {
   const submit = useSubmitInspection()
   const [answers, setAnswers] = React.useState<Answers>({})
   const [err, setErr] = React.useState<string | null>(null)
+  const [done, setDone] = React.useState(false)
 
   if (itemsQ.isLoading) return <Loading label="Loading checklist…" />
   if (itemsQ.error) return <ErrorState error={itemsQ.error} onRetry={itemsQ.refetch} />
@@ -90,6 +114,25 @@ function InspectionForm({ id }: { id: string }) {
 
   const allAnswered = items.every((it) => answers[it.id] !== undefined)
   const answeredCount = items.filter((it) => answers[it.id] !== undefined).length
+
+  if (done) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <CheckCircle2 className="mx-auto size-10 text-emerald-600" />
+          <p className="mt-3 text-[15px] font-medium text-slate-800">Inspection submitted</p>
+          <p className="mt-1 text-[13px] text-slate-500">
+            The checklist was captured and non-compliant items were raised as findings.
+          </p>
+          <div className="mt-4 flex justify-center gap-2">
+            <Link to="/inspection">
+              <Button variant="outline" size="sm">Back to inspections</Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card>
@@ -169,6 +212,7 @@ function InspectionForm({ id }: { id: string }) {
               }
               try {
                 await submit.mutateAsync({ id: Number(id), answers: payload })
+                setDone(true)
               } catch (e) {
                 setErr(e instanceof ApiError ? e.firstError : "Failed to submit inspection.")
               }

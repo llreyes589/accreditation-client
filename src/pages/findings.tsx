@@ -14,6 +14,7 @@ import { ApiError } from "@/api/client"
 import {
   useFindings, useInspections, useCreateFinding, useCreateCorrectiveAction,
   useUploadEvidence, useResolveCorrectiveAction, useVerifyCorrectiveAction,
+  useApproveFinding,
 } from "@/api/hooks"
 import { statusLabel } from "@/api/types"
 import type { AccreditationInspection, Finding, CorrectiveAction } from "@/api/types"
@@ -26,6 +27,17 @@ function FindingCard({ finding }: { finding: Finding }) {
   const isReviewer = roles.some(IS_REVIEWER)
   const isInstitution = roles.some(IS_INSTITUTION)
   const actions = finding.actions ?? []
+  const approve = useApproveFinding()
+  const [approveErr, setApproveErr] = React.useState<string | null>(null)
+
+  const onApprove = async () => {
+    try { await approve.mutateAsync(finding.id) } catch (e) { setApproveErr((e as ApiError).message) }
+  }
+
+  const canApprove =
+    isReviewer &&
+    !!finding.checklist_item &&
+    (finding.status === "open" || finding.status === "in_progress")
 
   return (
     <Card>
@@ -46,8 +58,14 @@ function FindingCard({ finding }: { finding: Finding }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
+          {canApprove && (
+            <Button size="sm" variant="outline" onClick={onApprove} disabled={approve.isPending}>
+              <Check className="mr-1 size-3.5" /> Approve &amp; mark item compliant
+            </Button>
+          )}
           {!isReviewer && isInstitution && <AddActionDialog findingId={finding.id} />}
         </div>
+        {approveErr && <p className="text-[12px] text-red-600">{approveErr}</p>}
 
         {actions.length === 0 ? (
           <p className="text-[13px] text-slate-500">No corrective actions yet.</p>

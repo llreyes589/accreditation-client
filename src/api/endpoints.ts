@@ -92,10 +92,11 @@ export const updateInstitutionProfile = (payload: {
   city?: string;
   latitude?: number;
   longitude?: number;
-}) => api<Institution>("/institution-profile", { method: "PUT", body: payload });
+}) =>
+  api<Institution>("/institution-profile", { method: "PUT", body: payload });
 
 export const searchPlaces = (q: string) =>
-  api<PlacesResult[]>("/places/search?q=" + encodeURIComponent(q))
+  api<PlacesResult[]>("/places/search?q=" + encodeURIComponent(q));
 
 export const registerResident = (payload: {
   institution_id: number;
@@ -152,7 +153,11 @@ export const updateNotificationPreferences = (
     quiet_hours_start?: string | null;
     quiet_hours_end?: string | null;
   }>,
-) => api<NotificationPreference[]>("/notification-preferences", { method: "PUT", body: { preferences } });
+) =>
+  api<NotificationPreference[]>("/notification-preferences", {
+    method: "PUT",
+    body: { preferences },
+  });
 
 /* Reports (CSV streamed download) */
 type ReportFilters = {
@@ -164,7 +169,10 @@ type ReportFilters = {
   severity?: string;
 };
 
-export const downloadReport = (kind: "accreditations" | "renewals" | "findings" | "inspections", filters: ReportFilters = {}) => {
+export const downloadReport = (
+  kind: "accreditations" | "renewals" | "findings" | "inspections",
+  filters: ReportFilters = {},
+) => {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
@@ -259,37 +267,84 @@ export const listAccreditations = () => api<Accreditation[]>("/accreditations");
 export const submitAccreditation = (checklist_snapshot: ChecklistItem[]) =>
   api<Accreditation>("/accreditations", { body: { checklist_snapshot } });
 
-export const scheduleInspection = (id: number, inspection_scheduled_at: string) =>
+export const scheduleInspection = (
+  id: number,
+  inspection_scheduled_at: string,
+) =>
   api<Accreditation>(`/admin/accreditations/${id}/schedule-inspection`, {
     method: "POST",
     body: { inspection_scheduled_at },
-  })
+  });
 
 export const markRequirementsCompleted = (id: number) =>
-  api<Accreditation>(`/admin/accreditations/${id}/mark-requirements-completed`, {
-    method: "POST",
-  })
+  api<Accreditation>(
+    `/admin/accreditations/${id}/mark-requirements-completed`,
+    {
+      method: "POST",
+    },
+  );
+
+/* Inspection accreditor assignment (Admin) */
+export const listAccreditors = () =>
+  api<{ accreditors: { id: number; name: string; email: string }[] }>(
+    `/admin/accreditors`,
+    { method: "GET" },
+  );
+
+export const assignAccreditor = (
+  accreditationId: number,
+  inspectionId: number,
+  userId: number,
+  role: "lead" | "member",
+) =>
+  api<AccreditationInspection>(
+    `/admin/accreditations/${accreditationId}/inspections/${inspectionId}/accreditors`,
+    { method: "POST", body: { user_id: userId, role } },
+  );
+
+export const changeLeadAccreditor = (
+  accreditationId: number,
+  inspectionId: number,
+  userId: number,
+) =>
+  api<AccreditationInspection>(
+    `/admin/accreditations/${accreditationId}/inspections/${inspectionId}/lead`,
+    { method: "POST", body: { user_id: userId } },
+  );
+
+export const removeAccreditor = (
+  accreditationId: number,
+  inspectionId: number,
+  assignmentId: number,
+) =>
+  api<AccreditationInspection>(
+    `/admin/accreditations/${accreditationId}/inspections/${inspectionId}/accreditors/${assignmentId}`,
+    { method: "DELETE" },
+  );
 
 /* Inspection capture (Accreditor) */
 export const getAccreditation = (id: number) =>
   api<{
-    accreditation: Accreditation & { inspections: AccreditationInspection[] }
-    documents: InstitutionDocument[]
-    checklist_items: InspectionChecklistItem[]
-  }>(`/accreditations/${id}`)
+    accreditation: Accreditation & { inspections: AccreditationInspection[] };
+    documents: InstitutionDocument[];
+    checklist_items: InspectionChecklistItem[];
+  }>(`/accreditations/${id}`);
 
 export const getAdminAccreditation = (id: number) =>
   api<{
-    accreditation: Accreditation & { inspections: AccreditationInspection[]; institution?: Institution }
-    documents: InstitutionDocument[]
-    checklist_items: InspectionChecklistItem[]
-  }>(`/admin/accreditations/${id}`)
+    accreditation: Accreditation & {
+      inspections: AccreditationInspection[];
+      institution?: Institution;
+    };
+    documents: InstitutionDocument[];
+    checklist_items: InspectionChecklistItem[];
+  }>(`/admin/accreditations/${id}`);
 
 export const getChecklistItems = () =>
-  api<InspectionChecklistItem[]>(`/accreditor/checklist-items`)
+  api<InspectionChecklistItem[]>(`/accreditor/checklist-items`);
 
 export const pendingInspections = () =>
-  api<Accreditation[]>(`/accreditor/inspections/pending`)
+  api<Accreditation[]>(`/accreditor/inspections/pending`);
 
 export const submitInspection = (
   id: number,
@@ -414,7 +469,11 @@ export const updateRemediationPlan = (
     plan?: string;
     target_date?: string;
   },
-) => api<RemediationPlan>(`/remediation-plans/${id}`, { method: "PUT", body: payload });
+) =>
+  api<RemediationPlan>(`/remediation-plans/${id}`, {
+    method: "PUT",
+    body: payload,
+  });
 
 export const listPortfolioArchives = () =>
   api<PortfolioArchive[]>("/portfolio-archives");
@@ -428,9 +487,13 @@ export const createPortfolioArchive = (payload: {
 
 /* Findings & Corrective Actions */
 export const listInspections = () =>
-  api<Array<AccreditationInspection & { accreditation: Accreditation & { institution?: Institution } }>>(
-    "/staff/inspections"
-  );
+  api<
+    Array<
+      AccreditationInspection & {
+        accreditation: Accreditation & { institution?: Institution };
+      }
+    >
+  >("/staff/inspections");
 
 export const listFindings = () => api<Finding[]>("/staff/findings");
 
@@ -442,8 +505,13 @@ export const createFinding = (payload: {
   severity?: "major" | "minor";
 }) => api<Finding>("/staff/findings", { body: payload });
 
+export const approveFinding = (findingId: number) =>
+  api<Finding>(`/staff/findings/${findingId}/approve`, { method: "POST" });
+
 export const listCorrectiveActions = (findingId?: number) =>
-  api<CorrectiveAction[]>(`/corrective-actions${findingId ? `?finding_id=${findingId}` : ""}`);
+  api<CorrectiveAction[]>(
+    `/corrective-actions${findingId ? `?finding_id=${findingId}` : ""}`,
+  );
 
 export const createCorrectiveAction = (payload: {
   finding_id: number;
@@ -455,14 +523,19 @@ export const createCorrectiveAction = (payload: {
 export const uploadEvidence = (actionId: number, file: File) => {
   const fd = new FormData();
   fd.append("file", file);
-  return api<CorrectiveActionEvidence>(`/corrective-actions/${actionId}/evidence`, {
-    method: "POST",
-    form: fd,
-  });
+  return api<CorrectiveActionEvidence>(
+    `/corrective-actions/${actionId}/evidence`,
+    {
+      method: "POST",
+      form: fd,
+    },
+  );
 };
 
 export const resolveCorrectiveAction = (actionId: number) =>
-  api<CorrectiveAction>(`/corrective-actions/${actionId}/resolve`, { method: "POST" });
+  api<CorrectiveAction>(`/corrective-actions/${actionId}/resolve`, {
+    method: "POST",
+  });
 
 export const verifyCorrectiveAction = (
   actionId: number,
@@ -494,19 +567,35 @@ export const approveUser = (userId: number) =>
 export const rejectUser = (userId: number, reason: string) =>
   api<User>(`/admin/users/${userId}/reject`, { body: { reason } });
 
-export const recordDecision = (id: number, payload: {
-  outcome: "approved" | "probationary" | "rejected";
-  notes?: string;
-  valid_until?: string;
-}) => api<Accreditation>(`/staff/accreditations/${id}/decision`, { method: "POST", body: payload });
+export const recordDecision = (
+  id: number,
+  payload: {
+    outcome: "approved" | "probationary" | "rejected";
+    notes?: string;
+    valid_until?: string;
+  },
+) =>
+  api<Accreditation>(`/staff/accreditations/${id}/decision`, {
+    method: "POST",
+    body: payload,
+  });
 
-export const draftDecision = (id: number, payload: {
-  outcome: "draft";
-  notes?: string;
-}) => api<AccreditationDecision>(`/accreditor/accreditations/${id}/decision-draft`, { method: "POST", body: payload });
+export const draftDecision = (
+  id: number,
+  payload: {
+    outcome: "draft";
+    notes?: string;
+  },
+) =>
+  api<AccreditationDecision>(
+    `/accreditor/accreditations/${id}/decision-draft`,
+    { method: "POST", body: payload },
+  );
 
 export const listDecisions = (id: number) =>
-  api<{ accreditation_id: number; decisions: AccreditationDecision[] }>(`/staff/accreditations/${id}/decisions`);
+  api<{ accreditation_id: number; decisions: AccreditationDecision[] }>(
+    `/staff/accreditations/${id}/decisions`,
+  );
 
 export const updateSettings = (settings: {
   track_durations?: Record<string, number>;
