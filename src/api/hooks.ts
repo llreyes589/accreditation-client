@@ -205,7 +205,7 @@ export const useSubmitInspection = () =>
   useInvalidating(
     (v: { id: number; answers: Record<string, { compliant: boolean; notes?: string }> }) =>
       ep.submitInspection(v.id, v.answers),
-    [["inspections", "pending"], qk.accreditations, qk.dashboard]
+    [["inspections", "pending"], ["staff", "findings"], qk.accreditations, qk.dashboard],
   )
 
 export const useAccreditationDetail = (id: number | undefined, enabled = true) =>
