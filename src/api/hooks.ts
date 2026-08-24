@@ -372,3 +372,12 @@ export const useRegisterInstitution = () =>
 export const useRegisterResident = () => useMutation({ mutationFn: ep.registerResident })
 
 export type { Track }
+
+/* kanban board */
+export const useKanbanBoard = (staff = false, enabled = true) =>
+  useQuery({
+    queryKey: ["kanban", staff ? "staff" : "own"],
+    queryFn: () => ep.getKanbanBoard(staff),
+    enabled,
+    retry: false,
+  })

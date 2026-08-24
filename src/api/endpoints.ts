@@ -35,6 +35,7 @@ import type {
   Setting,
   Track,
   User,
+  KanbanBoardDTO,
 } from "./types";
 
 /* =========================================================
@@ -182,8 +183,11 @@ export const downloadReport = (
 };
 
 /* =========================================================
-   TRAINING OFFICER  (role:TrainingOfficer)
+   KANBAN BOARD  (role: TrainingOfficer|TrainingInstitution|Admin|Accreditor)
    ========================================================= */
+
+export const getKanbanBoard = (staff = false) =>
+  api<KanbanBoardDTO>(staff ? "/staff/kanban" : "/kanban");
 
 /* Institution documents */
 export const listDocuments = () => api<InstitutionDocument[]>("/documents");

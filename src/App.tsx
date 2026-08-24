@@ -28,6 +28,7 @@ import InspectionPage from "@/pages/inspection"
 import FindingsPage from "@/pages/findings"
 import NotificationsPage from "@/pages/notifications"
 import ReportsPage from "@/pages/reports"
+import KanbanBoardPage from "@/pages/kanban-board"
 import { RegisterInstitutionPage, RegisterResidentPage } from "@/pages/register"
 
 const queryClient = new QueryClient({
@@ -97,6 +98,7 @@ function Router() {
         <Route path="findings" element={<Protected roles={[...TO, ...ACCREDITOR, ...ADMIN]}><FindingsPage /></Protected>} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="reports" element={<Protected roles={[...TO, ...ACCREDITOR, ...ADMIN]}><ReportsPage /></Protected>} />
+        <Route path="kanban" element={<KanbanBoardPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

@@ -437,3 +437,25 @@ export interface CorrectiveActionStatusLog {
 
 export const roleLabel = (r?: RoleName | string | null) =>
   r === "TrainingOfficer" ? "Training Officer" : (r ?? "—")
+
+/* ---- Kanban board (GET /kanban, /staff/kanban) ---- */
+
+export interface KanbanApplication {
+  id: string
+  applicantName: string
+  institution: string
+  program: string
+  enteredStageAt?: string | null
+  note?: string | null
+}
+
+export interface KanbanColumnDTO {
+  stage: { id: string; title: string; description: string }
+  applications: KanbanApplication[]
+}
+
+export interface KanbanBoardDTO {
+  stages: { id: string; title: string; description: string }[]
+  columns: KanbanColumnDTO[]
+  total: number
+}
