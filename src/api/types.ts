@@ -447,6 +447,18 @@ export interface KanbanApplication {
   program: string
   enteredStageAt?: string | null
   note?: string | null
+  /** Backend accreditation status — drives the card action buttons. */
+  status?:
+    | "pending"
+    | "requirements_completed"
+    | "inspection_scheduled"
+    | "inspected"
+    | "approved"
+    | "probationary"
+    | "rejected"
+    | null
+  submissionType?: "new" | "renew" | null
+  inspectionScheduledAt?: string | null
 }
 
 export interface KanbanColumnDTO {

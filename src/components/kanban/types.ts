@@ -101,6 +101,25 @@ export interface KanbanApplication {
   enteredStageAt?: string | null
   /** Free-form status note shown as a small badge on the card. */
   note?: string | null
+  /**
+   * Backend accreditation status. Drives which action buttons appear on the
+   * card (View Checklist / Decide / Schedule / Mark complete) and is passed
+   * through to AccreditationActions. Optional so the mock dataset — which has
+   * no live status — still renders as a presentational card.
+   */
+  status?:
+    | "pending"
+    | "requirements_completed"
+    | "inspection_scheduled"
+    | "inspected"
+    | "approved"
+    | "probationary"
+    | "rejected"
+    | null
+  /** Submission kind, surfaced as a small tag on the card. */
+  submissionType?: "new" | "renew" | null
+  /** ISO date an inspection is scheduled for (optional). */
+  inspectionScheduledAt?: string | null
 }
 
 export interface KanbanColumn {

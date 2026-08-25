@@ -23,6 +23,7 @@ export const qk = {
   rotations: ["rotations"],
   institutionProfile: ["institution-profile"],
   adminPending: ["admin", "pending"],
+  kanban: ["kanban"],
 }
 
 /* ---------------- queries ---------------- */
@@ -148,19 +149,19 @@ export const useCreateCaseLog = () =>
 export const useSubmitAccreditation = () =>
   useInvalidating(
     (snapshot: ChecklistItem[]) => ep.submitAccreditation(snapshot),
-    [qk.accreditations, qk.dashboard]
+    [qk.accreditations, qk.dashboard, qk.kanban]
   )
 
 export const useScheduleInspection = () =>
   useInvalidating(
     (v: { id: number; date: string }) => ep.scheduleInspection(v.id, v.date),
-    [qk.adminPending, qk.dashboard, qk.accreditations]
+    [qk.adminPending, qk.dashboard, qk.accreditations, qk.kanban]
   )
 
 export const useMarkRequirementsCompleted = () =>
   useInvalidating(
     (id: number) => ep.markRequirementsCompleted(id),
-    [qk.adminPending]
+    [qk.adminPending, qk.accreditations, qk.kanban]
   )
 
 export const useListAccreditors = () =>
@@ -353,13 +354,13 @@ export const useRecordDecision = () =>
   useInvalidating(
     (v: { id: number; payload: { outcome: "approved" | "probationary" | "rejected"; notes?: string; valid_until?: string } }) =>
       ep.recordDecision(v.id, v.payload),
-    [qk.adminPending],
+    [qk.adminPending, qk.kanban]
   )
 export const useDraftDecision = () =>
   useInvalidating(
     (v: { id: number; payload: { outcome: "draft"; notes?: string } }) =>
       ep.draftDecision(v.id, v.payload),
-    [qk.adminPending],
+    [qk.adminPending, qk.kanban]
   )
 export const useAccreditationDecisions = (id: number) =>
   useQuery({ queryKey: ["accDecisions", id], queryFn: () => ep.listDecisions(id) })
