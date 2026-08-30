@@ -288,6 +288,20 @@ export const markRequirementsCompleted = (id: number) =>
     },
   );
 
+export const startDeliberation = (id: number) =>
+  api<Accreditation>(`/admin/accreditations/${id}/start-deliberation`, {
+    method: "POST",
+  });
+
+export const editChecklist = (
+  id: number,
+  answers: Record<string, { compliant: boolean; notes?: string }>,
+) =>
+  api<AccreditationInspection>(
+    `/admin/accreditations/${id}/checklist`,
+    { method: "POST", body: { answers } },
+  );
+
 /* Inspection accreditor assignment (Admin) */
 export const listAccreditors = () =>
   api<{ accreditors: { id: number; name: string; email: string }[] }>(

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check, Loader2, CalendarDays } from "lucide-react";
+import { Loader2, CalendarDays, Gavel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,6 +16,8 @@ import {
   useDraftDecision,
   useScheduleInspection,
   useMarkRequirementsCompleted,
+  useStartDeliberation,
+  useEditChecklist,
   useAdminAccreditationDetail,
   useListAccreditors,
   useAssignAccreditor,
@@ -63,6 +65,8 @@ export function AccreditationActions({
   const draftDecision = useDraftDecision();
   const scheduleInspection = useScheduleInspection();
   const markComplete = useMarkRequirementsCompleted();
+  const startDeliberation = useStartDeliberation();
+  const editChecklist = useEditChecklist();
 
   const [selected, setSelected] = React.useState<number | null>(null);
   const [deciding, setDeciding] = React.useState<number | null>(null);
@@ -102,15 +106,10 @@ export function AccreditationActions({
       };
     if (a.status === "inspected")
       return {
-        label: "Decide",
-        icon: <Check />,
-        onClick: () => {
-          setDeciding(a.id);
-          setDecisionOutcome("approved");
-          setDecisionNotes("");
-          setDecisionValidUntil("");
-        },
-        pending: recordDecision.isPending,
+        label: "Start deliberation",
+        icon: <Gavel />,
+        onClick: () => startDeliberation.mutate(a.id),
+        pending: startDeliberation.isPending,
         disabled: false,
         variant: "default" as const,
       };
@@ -150,6 +149,24 @@ export function AccreditationActions({
             }
           >
             {draftDecision.isPending && <Loader2 className="animate-spin" />} Draft
+          </Button>
+        )}
+
+        {/* Secondary: record the final decision (Admin, inspected/deliberation). */}
+        {hasRole("Admin") && (a.status === "inspected" || a.status === "deliberation") && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-center"
+            disabled={recordDecision.isPending}
+            onClick={() => {
+              setDeciding(a.id);
+              setDecisionOutcome("approved");
+              setDecisionNotes("");
+              setDecisionValidUntil("");
+            }}
+          >
+            {recordDecision.isPending && <Loader2 className="animate-spin" />} Decide
           </Button>
         )}
 
@@ -194,6 +211,11 @@ export function AccreditationActions({
         {a.status === "inspected" && (
           <span className="text-[12px] text-emerald-600">
             Inspected — ready for approval
+          </span>
+        )}
+        {a.status === "deliberation" && (
+          <span className="text-[12px] text-amber-600">
+            In deliberation — accreditor locked; admin may edit the checklist
           </span>
         )}
       </div>
@@ -281,6 +303,7 @@ export function AccreditationActions({
       <AccreditationDetailDialog
         accreditationId={selected}
         onClose={() => setSelected(null)}
+        editChecklist={editChecklist}
       />
     </>
   );
@@ -294,9 +317,11 @@ export function AccreditationActions({
 function AccreditationDetailDialog({
   accreditationId,
   onClose,
+  editChecklist,
 }: {
   accreditationId: number | null;
   onClose: () => void;
+  editChecklist: ReturnType<typeof useEditChecklist>;
 }) {
   const open = accreditationId !== null;
   const q = useAdminAccreditationDetail(accreditationId ?? undefined, open);
@@ -312,6 +337,17 @@ function AccreditationDetailDialog({
   const compliantCount = items.filter(
     (it) => answers[String(it.id)]?.compliant,
   ).length;
+  // Editable draft of answers for the admin deliberation editor.
+  const [editAnswers, setEditAnswers] = React.useState<Record<
+    string,
+    { compliant: boolean; notes?: string }
+  > | null>(null);
+  const isAdmin = useAuth().hasRole("Admin");
+  const canEditChecklist =
+    isAdmin &&
+    data != null &&
+    (data.accreditation.status === "deliberation" ||
+      data.accreditation.status === "inspected");
 
   return (
     <Dialog
@@ -341,6 +377,11 @@ function AccreditationDetailDialog({
             <TabsList>
               <TabsTrigger value="documents">Documents</TabsTrigger>
               <TabsTrigger value="inspection">Inspection Checklist</TabsTrigger>
+              {canEditChecklist && (
+                <TabsTrigger value="deliberation">
+                  Deliberation (edit)
+                </TabsTrigger>
+              )}
               {data.accreditation.status === "inspection_scheduled" && (
                 <TabsTrigger value="assignment">Assignment</TabsTrigger>
               )}
@@ -483,6 +524,120 @@ function AccreditationDetailDialog({
                 </Card>
               )}
             </TabsContent>
+            {canEditChecklist && (
+              <TabsContent value="deliberation">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Gavel className="size-4" /> Edit checklist (deliberation)
+                    </CardTitle>
+                    <CardDescription>
+                      Admin-only. Adjust each criterion; the accreditor is locked
+                      out during deliberation. Saving writes to the captured
+                      inspection.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {Object.keys(bySection).map((s) => (
+                      <div key={s}>
+                        <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-slate-500">
+                          Section {s}
+                        </h3>
+                        <div className="space-y-2">
+                          {bySection[s].map((it) => {
+                            const key = String(it.id);
+                            const cur = (editAnswers ?? answers)[key] ?? {
+                              compliant: false,
+                            };
+                            return (
+                              <div
+                                key={it.id}
+                                className="rounded border border-slate-200 p-3"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <p className="min-w-0 text-[13px] font-medium text-slate-800">
+                                    {it.code ? `${it.code} ` : ""}
+                                    {it.criterion}
+                                  </p>
+                                  <label className="flex shrink-0 items-center gap-1.5 text-[12px]">
+                                    <input
+                                      type="checkbox"
+                                      checked={!!cur.compliant}
+                                      onChange={(e) =>
+                                        setEditAnswers((prev) => {
+                                          const base = prev ?? answers;
+                                          return {
+                                            ...base,
+                                            [key]: {
+                                              compliant: e.target.checked,
+                                              notes:
+                                                base[key]?.notes ??
+                                                answers[key]?.notes ??
+                                                undefined,
+                                            },
+                                          };
+                                        })
+                                      }
+                                    />
+                                    Compliant
+                                  </label>
+                                </div>
+                                <Input
+                                  className="mt-2 h-8 text-[12px]"
+                                  placeholder="Notes (optional)"
+                                  defaultValue={answers[key]?.notes ?? ""}
+                                  onChange={(e) =>
+                                    setEditAnswers((prev) => {
+                                      const base = prev ?? answers;
+                                      return {
+                                        ...base,
+                                        [key]: {
+                                          compliant:
+                                            base[key]?.compliant ?? false,
+                                          notes: e.target.value || undefined,
+                                        },
+                                      };
+                                    })
+                                  }
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex justify-end gap-2 pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditAnswers(null)}
+                        disabled={editChecklist.isPending}
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={editChecklist.isPending}
+                        onClick={async () => {
+                          const draft = editAnswers ?? answers;
+                          await editChecklist.mutateAsync({
+                            id: data!.accreditation.id,
+                            answers: draft,
+                          });
+                          setEditAnswers(null);
+                        }}
+                      >
+                        {editChecklist.isPending && (
+                          <Loader2 className="animate-spin" />
+                        )}{" "}
+                        Save checklist
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
+
             {data.accreditation.status === "inspection_scheduled" &&
               (() => {
                 const pending = data.accreditation.inspections?.find(

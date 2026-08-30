@@ -164,6 +164,19 @@ export const useMarkRequirementsCompleted = () =>
     [qk.adminPending, qk.accreditations, qk.kanban]
   )
 
+export const useStartDeliberation = () =>
+  useInvalidating(
+    (id: number) => ep.startDeliberation(id),
+    [qk.adminPending, qk.accreditations, qk.kanban, ["admin", "accreditation", "detail"]]
+  )
+
+export const useEditChecklist = () =>
+  useInvalidating(
+    (v: { id: number; answers: Record<string, { compliant: boolean; notes?: string }> }) =>
+      ep.editChecklist(v.id, v.answers),
+    [["admin", "accreditation", "detail"]]
+  )
+
 export const useListAccreditors = () =>
   useQuery({ queryKey: ["accreditors"], queryFn: ep.listAccreditors, retry: false })
 

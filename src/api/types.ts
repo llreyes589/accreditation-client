@@ -194,7 +194,7 @@ export interface Accreditation {
   approved_by: number | null
   valid_from: string | null
   valid_until: string | null
-  status: "pending" | "requirements_completed" | "inspection_scheduled" | "inspected" | "approved" | "probationary" | "rejected"
+  status: "pending" | "requirements_completed" | "inspection_scheduled" | "inspected" | "deliberation" | "approved" | "probationary" | "rejected"
   submission_type?: "new" | "renew" | null
   inspection_scheduled_at?: string | null
   submitted_at?: string | null
