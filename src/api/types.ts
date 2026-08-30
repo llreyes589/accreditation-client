@@ -207,6 +207,8 @@ export interface AccreditationDecision {
   id: number
   accreditation_id: number
   outcome: "draft" | "approved" | "probationary" | "rejected"
+  recommendation?: "3_years" | "3_years_conditional" | "1_year" | null
+  vote_count?: number | null
   notes: string | null
   valid_from: string | null
   valid_until: string | null

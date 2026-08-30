@@ -365,13 +365,13 @@ export const useRejectUser = () =>
   ])
 export const useRecordDecision = () =>
   useInvalidating(
-    (v: { id: number; payload: { outcome: "approved" | "probationary" | "rejected"; notes?: string; valid_until?: string } }) =>
+    (v: { id: number; payload: { outcome: "approved" | "probationary" | "rejected"; notes?: string; valid_until?: string; recommendation?: "3_years" | "3_years_conditional" | "1_year"; vote_count?: number } }) =>
       ep.recordDecision(v.id, v.payload),
     [qk.adminPending, qk.kanban]
   )
 export const useDraftDecision = () =>
   useInvalidating(
-    (v: { id: number; payload: { outcome: "draft"; notes?: string } }) =>
+    (v: { id: number; payload: { outcome: "draft"; notes?: string; recommendation?: "3_years" | "3_years_conditional" | "1_year"; vote_count?: number } }) =>
       ep.draftDecision(v.id, v.payload),
     [qk.adminPending, qk.kanban]
   )

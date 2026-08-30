@@ -75,6 +75,10 @@ export function AccreditationActions({
   >("approved");
   const [decisionNotes, setDecisionNotes] = React.useState("");
   const [decisionValidUntil, setDecisionValidUntil] = React.useState("");
+  const [decisionRecommendation, setDecisionRecommendation] = React.useState<
+    "3_years" | "3_years_conditional" | "1_year" | ""
+  >("");
+  const [decisionVoteCount, setDecisionVoteCount] = React.useState<string>("");
   const [schedDate, setSchedDate] = React.useState<Record<number, string>>({});
   const [scheduledFor, setScheduledFor] = React.useState<number | null>(null);
 
@@ -164,6 +168,8 @@ export function AccreditationActions({
               setDecisionOutcome("approved");
               setDecisionNotes("");
               setDecisionValidUntil("");
+              setDecisionRecommendation("");
+              setDecisionVoteCount("");
             }}
           >
             {recordDecision.isPending && <Loader2 className="animate-spin" />} Decide
@@ -272,6 +278,36 @@ export function AccreditationActions({
                 />
               </div>
             )}
+            <div className="space-y-1.5">
+              <Label>Recommendation (deliberation)</Label>
+              <Select
+                value={decisionRecommendation}
+                onChange={(e) =>
+                  setDecisionRecommendation(
+                    e.target.value as
+                      | "3_years"
+                      | "3_years_conditional"
+                      | "1_year"
+                      | "",
+                  )
+                }
+              >
+                <option value="">— none —</option>
+                <option value="3_years">3 years</option>
+                <option value="3_years_conditional">3 years (with condition)</option>
+                <option value="1_year">1 year</option>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Vote count (optional)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={decisionVoteCount}
+                onChange={(e) => setDecisionVoteCount(e.target.value)}
+                placeholder="Number of votes for the recommendation"
+              />
+            </div>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <DialogClose asChild>
@@ -287,6 +323,11 @@ export function AccreditationActions({
                     outcome: decisionOutcome,
                     notes: decisionNotes || undefined,
                     valid_until: decisionValidUntil || undefined,
+                    recommendation: decisionRecommendation || undefined,
+                    vote_count:
+                      decisionVoteCount !== ""
+                        ? Number(decisionVoteCount)
+                        : undefined,
                   },
                 });
                 setDeciding(null);

@@ -591,6 +591,8 @@ export const recordDecision = (
     outcome: "approved" | "probationary" | "rejected";
     notes?: string;
     valid_until?: string;
+    recommendation?: "3_years" | "3_years_conditional" | "1_year";
+    vote_count?: number;
   },
 ) =>
   api<Accreditation>(`/staff/accreditations/${id}/decision`, {
@@ -603,6 +605,8 @@ export const draftDecision = (
   payload: {
     outcome: "draft";
     notes?: string;
+    recommendation?: "3_years" | "3_years_conditional" | "1_year";
+    vote_count?: number;
   },
 ) =>
   api<AccreditationDecision>(
