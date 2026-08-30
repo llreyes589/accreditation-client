@@ -79,7 +79,7 @@ export function AccreditationActions({
     "3_years" | "3_years_conditional" | "1_year" | ""
   >("");
   const [decisionVoteCount, setDecisionVoteCount] = React.useState<string>("");
-  const [decisionTrack, setDecisionTrack] = React.useState<"AP" | "CP" | "APCP" | "">("");
+  const [decisionTrack, setDecisionTrack] = React.useState<Array<"AP" | "CP">>([]);
   const [schedDate, setSchedDate] = React.useState<Record<number, string>>({});
   const [scheduledFor, setScheduledFor] = React.useState<number | null>(null);
 
@@ -171,7 +171,7 @@ export function AccreditationActions({
               setDecisionValidUntil("");
               setDecisionRecommendation("");
               setDecisionVoteCount("");
-              setDecisionTrack("");
+              setDecisionTrack([]);
             }}
           >
             {recordDecision.isPending && <Loader2 className="animate-spin" />} Decide
@@ -311,20 +311,25 @@ export function AccreditationActions({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Track</Label>
-              <Select
-                value={decisionTrack}
-                onChange={(e) =>
-                  setDecisionTrack(
-                    e.target.value as "AP" | "CP" | "APCP" | "",
-                  )
-                }
-              >
-                <option value="">— none —</option>
-                <option value="AP">AP (Anatomic Pathology)</option>
-                <option value="CP">CP (Clinical Pathology)</option>
-                <option value="APCP">APCP (both)</option>
-              </Select>
+              <Label>Track (multi-select)</Label>
+              <div className="flex flex-wrap gap-4 pt-1">
+                {(["AP", "CP"] as const).map((t) => (
+                  <label key={t} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={decisionTrack.includes(t)}
+                      onChange={(e) =>
+                        setDecisionTrack((prev) =>
+                          e.target.checked
+                            ? [...prev, t]
+                            : prev.filter((x) => x !== t),
+                        )
+                      }
+                    />
+                    {t === "AP" ? "AP (Anatomic Pathology)" : "CP (Clinical Pathology)"}
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-1">
@@ -346,7 +351,7 @@ export function AccreditationActions({
                       decisionVoteCount !== ""
                         ? Number(decisionVoteCount)
                         : undefined,
-                    track: decisionTrack || undefined,
+                    track: decisionTrack.length ? decisionTrack : undefined,
                   },
                 });
                 setDeciding(null);

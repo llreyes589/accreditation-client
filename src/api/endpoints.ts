@@ -593,7 +593,7 @@ export const recordDecision = (
     valid_until?: string;
     recommendation?: "3_years" | "3_years_conditional" | "1_year";
     vote_count?: number;
-    track?: "AP" | "CP" | "APCP";
+    track?: Array<"AP" | "CP">;
   },
 ) =>
   api<Accreditation>(`/staff/accreditations/${id}/decision`, {
