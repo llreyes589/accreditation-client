@@ -194,6 +194,7 @@ export interface Accreditation {
   approved_by: number | null
   valid_from: string | null
   valid_until: string | null
+  track?: "AP" | "CP" | "APCP" | null
   status: "pending" | "requirements_completed" | "inspection_scheduled" | "inspected" | "deliberation" | "approved" | "probationary" | "rejected"
   submission_type?: "new" | "renew" | null
   inspection_scheduled_at?: string | null

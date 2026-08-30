@@ -365,7 +365,7 @@ export const useRejectUser = () =>
   ])
 export const useRecordDecision = () =>
   useInvalidating(
-    (v: { id: number; payload: { outcome: "approved" | "probationary" | "rejected"; notes?: string; valid_until?: string; recommendation?: "3_years" | "3_years_conditional" | "1_year"; vote_count?: number } }) =>
+    (v: { id: number; payload: { outcome: "approved" | "probationary" | "rejected"; notes?: string; valid_until?: string; recommendation?: "3_years" | "3_years_conditional" | "1_year"; vote_count?: number; track?: "AP" | "CP" | "APCP" } }) =>
       ep.recordDecision(v.id, v.payload),
     [qk.adminPending, qk.kanban]
   )

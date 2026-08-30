@@ -79,6 +79,7 @@ export function AccreditationActions({
     "3_years" | "3_years_conditional" | "1_year" | ""
   >("");
   const [decisionVoteCount, setDecisionVoteCount] = React.useState<string>("");
+  const [decisionTrack, setDecisionTrack] = React.useState<"AP" | "CP" | "APCP" | "">("");
   const [schedDate, setSchedDate] = React.useState<Record<number, string>>({});
   const [scheduledFor, setScheduledFor] = React.useState<number | null>(null);
 
@@ -170,6 +171,7 @@ export function AccreditationActions({
               setDecisionValidUntil("");
               setDecisionRecommendation("");
               setDecisionVoteCount("");
+              setDecisionTrack("");
             }}
           >
             {recordDecision.isPending && <Loader2 className="animate-spin" />} Decide
@@ -308,6 +310,22 @@ export function AccreditationActions({
                 placeholder="Number of votes for the recommendation"
               />
             </div>
+            <div className="space-y-1.5">
+              <Label>Track</Label>
+              <Select
+                value={decisionTrack}
+                onChange={(e) =>
+                  setDecisionTrack(
+                    e.target.value as "AP" | "CP" | "APCP" | "",
+                  )
+                }
+              >
+                <option value="">— none —</option>
+                <option value="AP">AP (Anatomic Pathology)</option>
+                <option value="CP">CP (Clinical Pathology)</option>
+                <option value="APCP">APCP (both)</option>
+              </Select>
+            </div>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <DialogClose asChild>
@@ -328,6 +346,7 @@ export function AccreditationActions({
                       decisionVoteCount !== ""
                         ? Number(decisionVoteCount)
                         : undefined,
+                    track: decisionTrack || undefined,
                   },
                 });
                 setDeciding(null);
