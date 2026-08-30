@@ -259,7 +259,7 @@ export interface ResidentTransfer {
   from_institution_id: number
   to_institution_id: number
   reason: string | null
-  status: "pending" | "accepted" | "rejected"
+  status: "pending" | "accepted" | "denied"
   requested_by: number
   decided_by: number | null
   decided_at: string | null

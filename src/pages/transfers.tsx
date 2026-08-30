@@ -45,7 +45,7 @@ export default function TransfersPage() {
                   <TableHead>Track</TableHead>
                   <TableHead>Reason</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Decision</TableHead>
+                  <TableHead className="text-right">Disposition</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
