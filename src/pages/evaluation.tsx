@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Plus, Loader2, ClipboardCheck } from "lucide-react"
+import { Plus, Loader2, ClipboardCheck, Star } from "lucide-react"
 import { PageHeader, StatCard } from "@/components/shared"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,8 +11,8 @@ import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/primitives"
 import { Loading, ErrorState, Empty } from "@/components/states"
-import { useQuizzes, useCreateQuiz, useRecordResult, useResidents } from "@/api/hooks"
-import type { Quiz } from "@/api/types"
+import { useQuizzes, useCreateQuiz, useRecordResult, useResidents, useConsultants, useCreateConsultantEvaluation } from "@/api/hooks"
+import type { Quiz, Consultant } from "@/api/types"
 import { ApiError } from "@/api/client"
 
 export default function EvaluationPage() {
@@ -30,7 +30,7 @@ export default function EvaluationPage() {
       <PageHeader
         title="Quizzes & Exams"
         description="Scores drive promotion eligibility against the configured thresholds"
-        actions={<CreateQuizDialog />}
+        actions={<><RecordEvaluationDialog /><CreateQuizDialog /></>}
       />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
@@ -140,7 +140,7 @@ function CreateQuizDialog() {
             try {
               await mut.mutateAsync({
                 title: String(f.get("title")),
-                type: String(f.get("type")) as "quiz" | "exam",
+                type: String(f.get("type")) as "quiz" | "exam" | "rise",
                 max_score: Number(f.get("max_score")),
               })
               setOpen(false)
@@ -153,7 +153,7 @@ function CreateQuizDialog() {
             <div className="space-y-1.5">
               <Label>Type</Label>
               <Select name="type" defaultValue="quiz">
-                <option value="quiz">Quiz</option><option value="exam">Exam</option>
+                <option value="quiz">Quiz</option><option value="exam">Exam</option><option value="rise">RISE</option>
               </Select>
             </div>
             <div className="space-y-1.5">
@@ -229,6 +229,90 @@ function RecordResultDialog({ quiz }: { quiz: Quiz }) {
             <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
             <Button type="submit" disabled={mut.isPending}>
               {mut.isPending && <Loader2 className="animate-spin" />} Record
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** Flowchart node M: record a consultant evaluation for a resident. */
+function RecordEvaluationDialog() {
+  const mut = useCreateConsultantEvaluation()
+  const residents = useResidents()
+  const consultants = useConsultants()
+  const [open, setOpen] = React.useState(false)
+  const [err, setErr] = React.useState<string | null>(null)
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button size="sm" variant="outline"><Star /> Consultant Evaluation</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Record consultant evaluation</DialogTitle>
+          <DialogDescription>Periodic evaluation with a continue / remediate recommendation.</DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-3"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            setErr(null)
+            const f = new FormData(e.currentTarget)
+            try {
+              await mut.mutateAsync({
+                resident_id: Number(f.get("resident_id")),
+                consultant_id: f.get("consultant_id") ? Number(f.get("consultant_id")) : undefined,
+                period: String(f.get("period")),
+                recommendation: (f.get("recommendation") || undefined) as "continue" | "remediate" | undefined,
+                comments: String(f.get("comments") || "") || undefined,
+                evaluated_at: String(f.get("evaluated_at") || "") || undefined,
+              })
+              setOpen(false)
+            } catch (e2) { setErr(e2 instanceof ApiError ? e2.firstError : "Failed.") }
+          }}
+        >
+          {err && <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">{err}</p>}
+          <div className="space-y-1.5">
+            <Label>Resident</Label>
+            <Select name="resident_id" required defaultValue="">
+              <option value="" disabled>Select…</option>
+              {(residents.data ?? []).map((r) => (
+                <option key={r.id} value={r.id}>{r.user?.name ?? `Resident #${r.id}`}</option>
+              ))}
+            </Select>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Consultant</Label>
+              <Select name="consultant_id" defaultValue="">
+                <option value="">—</option>
+                {(consultants.data ?? []).map((c: Consultant) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-1.5"><Label>Period</Label><Input name="period" placeholder="e.g. 2026-Q1" required /></div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Recommendation</Label>
+              <Select name="recommendation" defaultValue="">
+                <option value="">—</option>
+                <option value="continue">Continue</option>
+                <option value="remediate">Remediate</option>
+              </Select>
+            </div>
+            <div className="space-y-1.5"><Label>Evaluated At</Label><Input name="evaluated_at" type="date" /></div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Comments</Label>
+            <Input name="comments" />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
+            <Button type="submit" disabled={mut.isPending}>
+              {mut.isPending && <Loader2 className="animate-spin" />} Save
             </Button>
           </div>
         </form>

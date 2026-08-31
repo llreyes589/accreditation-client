@@ -131,7 +131,7 @@ export interface Quiz {
   id: number
   institution_id: number
   title: string
-  type: "quiz" | "exam"
+  type: "quiz" | "exam" | "rise"
   max_score: number
   created_by: number
   results?: QuizResult[]

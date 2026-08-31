@@ -236,7 +236,7 @@ export const listQuizzes = () => api<Quiz[]>("/quizzes");
 
 export const createQuiz = (payload: {
   title: string;
-  type: "quiz" | "exam";
+  type: "quiz" | "exam" | "rise";
   max_score: number;
 }) => api<Quiz>("/quizzes", { body: payload });
 
