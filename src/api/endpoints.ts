@@ -514,9 +514,12 @@ export const listPortfolioArchives = () =>
 export const createPortfolioArchive = (payload: {
   resident_id: number;
   summary?: string;
-  status?: "archived" | "sealed";
+  status?: "submitted" | "archived" | "sealed";
   archived_at?: string;
 }) => api<PortfolioArchive>("/portfolio-archives", { body: payload });
+
+export const archivePortfolio = (id: number) =>
+  api<PortfolioArchive>(`/portfolio-archives/${id}`, { method: "POST" });
 
 /* Findings & Corrective Actions */
 export const listInspections = () =>

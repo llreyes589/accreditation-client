@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input, Label } from "@/components/ui/input"
 import { Loading, ErrorState, Empty } from "@/components/states"
-import { useResidentPortfolio, useAdvanceResidentYear, useReviewResidentCompletion, useMarkPeriodComplete, useCreateRemediationPlan } from "@/api/hooks"
+import { useResidentPortfolio, useAdvanceResidentYear, useReviewResidentCompletion, useMarkPeriodComplete, useCreateRemediationPlan, useCreatePortfolioArchive, useArchivePortfolio } from "@/api/hooks"
 import type { ResidentPortfolio as Portfolio } from "@/api/types"
 import { ApiError } from "@/api/client"
 import {
@@ -27,6 +27,8 @@ export default function ResidentPortfolioPage() {
   const advanceYear = useAdvanceResidentYear()
   const reviewCompletion = useReviewResidentCompletion()
   const markPeriod = useMarkPeriodComplete()
+  const submitArchive = useCreatePortfolioArchive()
+  const finalizeArchive = useArchivePortfolio()
 
   if (q.isLoading) return <Loading label="Loading portfolio…" />
   if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />
@@ -339,9 +341,21 @@ export default function ResidentPortfolioPage() {
       {/* Portfolio archives (flowchart T/U) */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Archive className="h-4 w-4" /> Portfolio Archives
-          </CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Archive className="h-4 w-4" /> Portfolio Archives
+            </CardTitle>
+            {!p.portfolio_archives.some((a) => a.status === "submitted" || a.status === "archived" || a.status === "sealed") && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={submitArchive.isPending}
+                onClick={() => submitArchive.mutate({ resident_id: Number(id) })}
+              >
+                <Archive className="h-4 w-4" /> Submit Portfolio for Review
+              </Button>
+            )}
+          </div>
           <CardDescription>Submitted and archived resident portfolios.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -354,16 +368,29 @@ export default function ResidentPortfolioPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Archived</TableHead>
                   <TableHead>Summary</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {p.portfolio_archives.map((a) => (
                   <TableRow key={a.id}>
                     <TableCell>
-                      <Badge variant={a.status === "sealed" ? "outline" : "outline"}>{a.status}</Badge>
+                      <Badge variant={a.status === "submitted" ? "default" : "outline"}>{a.status}</Badge>
                     </TableCell>
                     <TableCell className="data-mono">{fmtDate(a.archived_at)}</TableCell>
                     <TableCell className="max-w-xs truncate">{a.summary ?? "—"}</TableCell>
+                    <TableCell className="text-right">
+                      {a.status === "submitted" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={finalizeArchive.isPending}
+                          onClick={() => finalizeArchive.mutate(a.id)}
+                        >
+                          Archive
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

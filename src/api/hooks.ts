@@ -317,7 +317,10 @@ export const usePortfolioArchives = (enabled = true) =>
   useQuery({ queryKey: ["portfolioArchives"], queryFn: ep.listPortfolioArchives, enabled })
 
 export const useCreatePortfolioArchive = () =>
-  useInvalidating(ep.createPortfolioArchive, [["portfolioArchives"], qk.residents])
+  useInvalidating(ep.createPortfolioArchive, [["portfolioArchives"], qk.residents, ["residentPortfolio"]])
+
+export const useArchivePortfolio = () =>
+  useInvalidating(ep.archivePortfolio, [["portfolioArchives"], qk.residents, ["residentPortfolio"]])
 
 /* Findings & Corrective Actions */
 export const useInspections = (enabled = true) =>

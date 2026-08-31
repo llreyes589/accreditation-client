@@ -401,7 +401,7 @@ export interface PortfolioArchive {
   id: number
   resident_id: number
   summary: string | null
-  status: "archived" | "sealed"
+  status: "submitted" | "archived" | "sealed"
   archived_at: string | null
   resident?: Resident
 }
