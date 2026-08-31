@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Loading, ErrorState, Empty } from "@/components/states"
-import { useResidentPortfolio } from "@/api/hooks"
+import { useResidentPortfolio, useAdvanceResidentYear, useReviewResidentCompletion } from "@/api/hooks"
 import type { ResidentPortfolio as Portfolio } from "@/api/types"
 
 const fmtDate = (iso?: string | null) =>
@@ -18,6 +18,8 @@ export default function ResidentPortfolioPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const q = useResidentPortfolio(id ? Number(id) : null)
+  const advanceYear = useAdvanceResidentYear()
+  const reviewCompletion = useReviewResidentCompletion()
 
   if (q.isLoading) return <Loading label="Loading portfolio…" />
   if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />
@@ -25,6 +27,9 @@ export default function ResidentPortfolioPage() {
 
   const p: Portfolio = q.data
   const r = p.resident
+  const isFinalYear =
+    !!r.expected_completion_date &&
+    new Date(r.expected_completion_date).getTime() - Date.now() <= 365 * 24 * 60 * 60 * 1000
 
   return (
     <div className="space-y-4">
@@ -52,6 +57,38 @@ export default function ResidentPortfolioPage() {
               </Badge>
             ) : "—"}
           </span>
+          {isFinalYear && <Badge variant="default">Final year</Badge>}
+        </CardContent>
+      </Card>
+
+      {/* Actions (flowchart R/Q/S) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Training Officer Actions</CardTitle>
+          <CardDescription>Advance the resident through the program and review completion.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={advanceYear.isPending}
+            onClick={() => advanceYear.mutate(Number(id))}
+          >
+            <GraduationCap className="h-4 w-4" /> Advance Year Level
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={reviewCompletion.isPending || !!r.completion_reviewed_at}
+            onClick={() => reviewCompletion.mutate(Number(id))}
+          >
+            <Star className="h-4 w-4" /> Review Completion
+          </Button>
+          {r.completion_reviewed_at ? (
+            <Badge variant="outline">Completion reviewed {fmtDate(r.completion_reviewed_at)}</Badge>
+          ) : (
+            <span className="text-sm text-slate-500">Completion not yet reviewed</span>
+          )}
         </CardContent>
       </Card>
 

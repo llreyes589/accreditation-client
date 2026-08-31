@@ -78,6 +78,7 @@ export interface Resident {
   year_level: number | null
   promotion_status: "eligible" | "ineligible" | null
   promotion_evaluated_at: string | null
+  completion_reviewed_at: string | null
   user?: User
   institution?: Institution
   transfers?: ResidentTransfer[]

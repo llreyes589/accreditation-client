@@ -405,6 +405,12 @@ export const createResident = (payload: {
 export const getResidentPortfolio = (id: number) =>
   api<ResidentPortfolio>(`/residents/${id}`);
 
+export const advanceResidentYear = (id: number) =>
+  api<Resident>(`/residents/${id}/advance-year`, { method: "POST" });
+
+export const reviewResidentCompletion = (id: number) =>
+  api<Resident>(`/residents/${id}/review-completion`, { method: "POST" });
+
 /* Transfers */
 export const requestTransfer = (
   residentId: number,
