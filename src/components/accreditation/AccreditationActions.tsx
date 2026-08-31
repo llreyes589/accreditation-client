@@ -462,7 +462,7 @@ export function AccreditationDetailDialog({
         if (!o) onClose();
       }}
     >
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             Accreditation Detail
