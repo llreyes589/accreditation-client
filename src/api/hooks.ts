@@ -74,6 +74,13 @@ export const useTrainingOfficers = (enabled = true) =>
 export const useResidents = (enabled = true) =>
   useQuery({ queryKey: qk.residents, queryFn: ep.listResidents, enabled })
 
+export const useResidentPortfolio = (id: number | null, enabled = true) =>
+  useQuery({
+    queryKey: ["residentPortfolio", id],
+    queryFn: () => ep.getResidentPortfolio(id as number),
+    enabled: enabled && id != null,
+  })
+
 export const usePlacesSearch = (q: string) =>
   useQuery({
     queryKey: ["places", "search", q],

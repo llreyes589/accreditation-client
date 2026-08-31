@@ -29,6 +29,7 @@ import type {
   QuizResult,
   ResearchPaper,
   Resident,
+  ResidentPortfolio,
   ResidentTransfer,
   RotationAssignment,
   RotationBlock,
@@ -400,6 +401,9 @@ export const createResident = (payload: {
   year_level?: number;
   age_at_enrollment?: number;
 }) => api<User>("/residents", { body: payload });
+
+export const getResidentPortfolio = (id: number) =>
+  api<ResidentPortfolio>(`/residents/${id}`);
 
 /* Transfers */
 export const requestTransfer = (

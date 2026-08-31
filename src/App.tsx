@@ -13,6 +13,7 @@ import InstitutionProfilePage from "@/pages/institution-profile"
 import AccreditationPage from "@/pages/accreditation"
 import ResidentsPage from "@/pages/residents"
 import ResidentLifecyclePage from "@/pages/resident-lifecycle"
+import ResidentPortfolioPage from "@/pages/resident-portfolio"
 import TrainingOfficersPage from "@/pages/training-officers"
 import ConsultantsPage from "@/pages/consultants"
 import RotationsPage from "@/pages/rotations"
@@ -85,6 +86,7 @@ function Router() {
         <Route path="accreditation" element={<Protected roles={TO}><AccreditationPage /></Protected>} />
         <Route path="residents" element={<Protected roles={TO}><ResidentsPage /></Protected>} />
         <Route path="residents/:id" element={<Protected roles={TO}><ResidentLifecyclePage /></Protected>} />
+        <Route path="residents/:id/portfolio" element={<Protected roles={TO}><ResidentPortfolioPage /></Protected>} />
         <Route path="training-officers" element={<Protected roles={TO}><TrainingOfficersPage /></Protected>} />
         <Route path="consultants" element={<Protected roles={TO}><ConsultantsPage /></Protected>} />
         <Route path="rotations" element={<Protected roles={TO}><RotationsPage /></Protected>} />

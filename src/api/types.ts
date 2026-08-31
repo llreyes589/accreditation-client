@@ -83,6 +83,18 @@ export interface Resident {
   transfers?: ResidentTransfer[]
 }
 
+/** Aggregated resident training portfolio (flowchart J/K/L/S hub). */
+export interface ResidentPortfolio {
+  resident: Resident & { user: User }
+  case_logs: CaseLog[]
+  quiz_results: (QuizResult & { quiz?: Quiz })[]
+  consultant_evaluations: ConsultantEvaluation[]
+  research_papers: ResearchPaper[]
+  remediation_plans: RemediationPlan[]
+  portfolio_archives: PortfolioArchive[]
+  consultant_reviews: ConsultantReview[]
+}
+
 export interface User {
   id: number
   name: string
@@ -139,6 +151,7 @@ export interface ResearchPaper {
   title: string
   stage: string
   notes: string | null
+  created_at?: string
 }
 
 export interface CaseLog {
@@ -356,7 +369,7 @@ export interface ConsultantReview {
   status: "validated" | "returned"
   comments: string | null
   consultant?: Consultant | null
-  assignment?: RotationAssignment
+  assignment?: RotationAssignment & { rotationBlock?: { title: string | null } | null }
 }
 
 export interface ConsultantEvaluation {
