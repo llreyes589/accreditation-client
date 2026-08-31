@@ -396,6 +396,8 @@ export const createResident = (payload: {
   password: string;
   track: Track;
   date_accepted?: string;
+  expected_completion_date?: string;
+  year_level?: number;
   age_at_enrollment?: number;
 }) => api<User>("/residents", { body: payload });
 

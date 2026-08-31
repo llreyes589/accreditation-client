@@ -73,6 +73,7 @@ export interface Resident {
   institution_id: number
   track: Track
   date_accepted: string | null
+  expected_completion_date: string | null
   age_at_enrollment: number | null
   year_level: number | null
   promotion_status: "eligible" | "ineligible" | null

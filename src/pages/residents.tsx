@@ -89,6 +89,7 @@ export default function ResidentsPage() {
                   <TableHead>Resident</TableHead>
                   <TableHead>Track</TableHead>
                   <TableHead>Accepted</TableHead>
+                  <TableHead>Expected Completion</TableHead>
                   <TableHead>Year</TableHead>
                   <TableHead>Promotion</TableHead>
                   <TableHead>Account</TableHead>
@@ -104,6 +105,7 @@ export default function ResidentsPage() {
                     </TableCell>
                     <TableCell><Badge variant="outline">{trackLabel(r.track)}</Badge></TableCell>
                     <TableCell className="data-mono">{fmtDate(r.date_accepted)}</TableCell>
+                    <TableCell className="data-mono">{fmtDate(r.expected_completion_date)}</TableCell>
                     <TableCell>
                       {r.year_level ? <Badge variant="info">Year {r.year_level}</Badge> : "—"}
                     </TableCell>
@@ -151,13 +153,15 @@ function CreateResidentDialog() {
             const f = new FormData(e.currentTarget)
             try {
               await mut.mutateAsync({
-                name: String(f.get("name")),
-                username: String(f.get("username")),
-                email: String(f.get("email")),
-                password: String(f.get("password")),
-                track: String(f.get("track")) as Track,
-                date_accepted: String(f.get("date_accepted") || "") || undefined,
-                age_at_enrollment: f.get("age") ? Number(f.get("age")) : undefined,
+              name: String(f.get("name")),
+              username: String(f.get("username")),
+              email: String(f.get("email")),
+              password: String(f.get("password")),
+              track: String(f.get("track")) as Track,
+              date_accepted: String(f.get("date_accepted") || "") || undefined,
+              expected_completion_date: String(f.get("expected_completion_date") || "") || undefined,
+              year_level: f.get("year_level") ? Number(f.get("year_level")) : undefined,
+              age_at_enrollment: f.get("age") ? Number(f.get("age")) : undefined,
               })
               setOpen(false)
             } catch (e2) {
@@ -178,6 +182,8 @@ function CreateResidentDialog() {
               </Select>
             </div>
             <div className="space-y-1.5"><Label>Date Accepted</Label><Input name="date_accepted" type="date" /></div>
+            <div className="space-y-1.5"><Label>Year Level</Label><Input name="year_level" type="number" min={1} max={10} placeholder="e.g. 1" /></div>
+            <div className="space-y-1.5"><Label>Expected Completion</Label><Input name="expected_completion_date" type="date" /></div>
           </div>
           <div className="space-y-1.5"><Label>Age at Enrollment</Label><Input name="age" type="number" min={0} /></div>
           <div className="flex justify-end gap-2 pt-1">
