@@ -411,6 +411,9 @@ export const advanceResidentYear = (id: number) =>
 export const reviewResidentCompletion = (id: number) =>
   api<Resident>(`/residents/${id}/review-completion`, { method: "POST" });
 
+export const markPeriodComplete = (id: number) =>
+  api<Resident>(`/residents/${id}/period-complete`, { method: "POST" });
+
 /* Transfers */
 export const requestTransfer = (
   residentId: number,

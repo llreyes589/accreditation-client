@@ -87,6 +87,9 @@ export const useAdvanceResidentYear = () =>
 export const useReviewResidentCompletion = () =>
   useInvalidating(ep.reviewResidentCompletion, [["residentPortfolio"], qk.residents, qk.dashboard])
 
+export const useMarkPeriodComplete = () =>
+  useInvalidating(ep.markPeriodComplete, [["residentPortfolio"], qk.residents, qk.dashboard])
+
 export const usePlacesSearch = (q: string) =>
   useQuery({
     queryKey: ["places", "search", q],

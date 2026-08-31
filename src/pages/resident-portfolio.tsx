@@ -1,13 +1,19 @@
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, ClipboardList, GraduationCap, Star, FileText, AlertTriangle, Archive } from "lucide-react"
+import * as React from "react"
+import { ArrowLeft, ClipboardList, GraduationCap, Star, FileText, AlertTriangle, Archive, Plus, Loader2 } from "lucide-react"
 import { PageHeader } from "@/components/shared"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input, Label } from "@/components/ui/input"
 import { Loading, ErrorState, Empty } from "@/components/states"
-import { useResidentPortfolio, useAdvanceResidentYear, useReviewResidentCompletion } from "@/api/hooks"
+import { useResidentPortfolio, useAdvanceResidentYear, useReviewResidentCompletion, useMarkPeriodComplete, useCreateRemediationPlan } from "@/api/hooks"
 import type { ResidentPortfolio as Portfolio } from "@/api/types"
+import { ApiError } from "@/api/client"
+import {
+  Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/primitives"
 
 const fmtDate = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "—"
@@ -20,6 +26,7 @@ export default function ResidentPortfolioPage() {
   const q = useResidentPortfolio(id ? Number(id) : null)
   const advanceYear = useAdvanceResidentYear()
   const reviewCompletion = useReviewResidentCompletion()
+  const markPeriod = useMarkPeriodComplete()
 
   if (q.isLoading) return <Loading label="Loading portfolio…" />
   if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />
@@ -83,6 +90,14 @@ export default function ResidentPortfolioPage() {
             onClick={() => reviewCompletion.mutate(Number(id))}
           >
             <Star className="h-4 w-4" /> Review Completion
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={markPeriod.isPending || !!r.period_completed_at}
+            onClick={() => markPeriod.mutate(Number(id))}
+          >
+            <ClipboardList className="h-4 w-4" /> Mark Period Complete
           </Button>
           {r.completion_reviewed_at ? (
             <Badge variant="outline">Completion reviewed {fmtDate(r.completion_reviewed_at)}</Badge>
@@ -285,9 +300,12 @@ export default function ResidentPortfolioPage() {
       {/* Remediation (flowchart O) */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="h-4 w-4" /> Remediation Plans
-          </CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4" /> Remediation Plans
+            </CardTitle>
+            <AddRemediationDialog residentId={Number(id)} />
+          </div>
           <CardDescription>Additional rotation / remediation plans.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -354,5 +372,54 @@ export default function ResidentPortfolioPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+/** Flowchart node O: create a remediation / additional rotation plan for the resident. */
+function AddRemediationDialog({ residentId }: { residentId: number }) {
+  const mut = useCreateRemediationPlan()
+  const [open, setOpen] = React.useState(false)
+  const [err, setErr] = React.useState<string | null>(null)
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline"><Plus className="h-4 w-4" /> Add Plan</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New remediation plan</DialogTitle>
+          <DialogDescription>Recorded when training requirements are not yet complete for the period.</DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-3"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            setErr(null)
+            const f = new FormData(e.currentTarget)
+            try {
+              await mut.mutateAsync({
+                resident_id: residentId,
+                reason: String(f.get("reason")),
+                plan: String(f.get("plan")),
+                target_date: String(f.get("target_date") || "") || undefined,
+              })
+              setOpen(false)
+            } catch (e2) { setErr(e2 instanceof ApiError ? e2.firstError : "Failed.") }
+          }}
+        >
+          {err && <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">{err}</p>}
+          <div className="space-y-1.5"><Label>Reason</Label><Input name="reason" required /></div>
+          <div className="space-y-1.5"><Label>Plan</Label><Input name="plan" required /></div>
+          <div className="space-y-1.5"><Label>Target Date</Label><Input name="target_date" type="date" /></div>
+          <div className="flex justify-end gap-2 pt-1">
+            <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
+            <Button type="submit" disabled={mut.isPending}>
+              {mut.isPending && <Loader2 className="animate-spin" />} Save
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
