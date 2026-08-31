@@ -6,6 +6,41 @@ import {
   type AccreditationLike,
 } from "@/components/accreditation/AccreditationActions"
 
+/** Granular-status -> chip color (rejected is red, approved green, …). */
+const STATUS_CHIP: Record<string, string> = {
+  pending: "bg-slate-100 text-slate-600",
+  requirements_completed: "bg-teal-100 text-teal-700",
+  inspection_scheduled: "bg-sky-100 text-sky-700",
+  inspected: "bg-indigo-100 text-indigo-700",
+  deliberation: "bg-violet-100 text-violet-700",
+  approved: "bg-emerald-100 text-emerald-700",
+  probationary: "bg-amber-100 text-amber-700",
+  rejected: "bg-red-100 text-red-700",
+}
+
+/** Granular-status -> left border accent for quick scanning. */
+const STATUS_ACCENT: Record<string, string> = {
+  pending: "border-l-slate-300",
+  requirements_completed: "border-l-teal-400",
+  inspection_scheduled: "border-l-sky-500",
+  inspected: "border-l-indigo-500",
+  deliberation: "border-l-violet-500",
+  approved: "border-l-emerald-500",
+  probationary: "border-l-amber-500",
+  rejected: "border-l-red-500",
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Pending",
+  requirements_completed: "Requirements complete",
+  inspection_scheduled: "Inspection scheduled",
+  inspected: "Inspected",
+  deliberation: "Deliberation",
+  approved: "Approved",
+  probationary: "Probationary",
+  rejected: "Rejected",
+}
+
 interface KanbanCardProps {
   application: KanbanApplication
   className?: string
@@ -36,10 +71,15 @@ export function KanbanCard({ application, className, onOpenDetail }: KanbanCardP
     decisions: [],
   }
 
+  const status = application.status ?? "pending"
+  const statusChip = STATUS_CHIP[status] ?? "bg-slate-100 text-slate-600"
+  const statusAccent = STATUS_ACCENT[status] ?? "border-l-slate-300"
+
   return (
     <article
       className={cn(
-        "rounded-md border border-slate-200 bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-sky-400",
+        "rounded-md border border-l-4 border-slate-200 bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-sky-400",
+        statusAccent,
         className,
       )}
     >
@@ -59,6 +99,23 @@ export function KanbanCard({ application, className, onOpenDetail }: KanbanCardP
           {application.applicantName}
         </p>
       </button>
+
+      {/* Status — emphasized, color-coded chip (rejected = red, approved = green, …). */}
+      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        <span
+          className={cn(
+            "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            statusChip,
+          )}
+        >
+          {STATUS_LABEL[status] ?? status}
+        </span>
+        {application.submissionType && (
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-slate-500">
+            {application.submissionType}
+          </span>
+        )}
+      </div>
 
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
         <span className="inline-flex items-center gap-1">
