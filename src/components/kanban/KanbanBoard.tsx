@@ -1,3 +1,4 @@
+import * as React from "react"
 import { cn } from "@/lib/utils"
 import {
   STAGES,
@@ -6,6 +7,9 @@ import {
   type KanbanColumn,
 } from "./types"
 import { KanbanCard } from "./KanbanCard"
+import { AccreditationDetailDialog } from "@/components/accreditation/AccreditationActions"
+import { useEditChecklist } from "@/api/hooks"
+import { stageOfStatus } from "./StageStepper"
 
 interface KanbanBoardProps {
   /** Pre-grouped columns. Defaults to the mock dataset (no backend needed). */
@@ -26,6 +30,11 @@ interface KanbanBoardProps {
 export function KanbanBoard({ columns, applications, className }: KanbanBoardProps) {
   const resolved = columns ?? groupByStage(applications)
   const total = resolved.reduce((n, c) => n + c.applications.length, 0)
+  const editChecklist = useEditChecklist()
+
+  // Stage-aware detail modal: clicking a card opens it.
+  const [detailApp, setDetailApp] = React.useState<KanbanApplication | null>(null)
+  const detailId = detailApp ? Number(detailApp.id.replace(/\D/g, "")) || null : null
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
@@ -101,7 +110,11 @@ export function KanbanBoard({ columns, applications, className }: KanbanBoardPro
                 </p>
               ) : (
                 col.applications.map((app) => (
-                  <KanbanCard key={app.id} application={app} />
+                  <KanbanCard
+                    key={app.id}
+                    application={app}
+                    onOpenDetail={setDetailApp}
+                  />
                 ))
               )}
             </div>
@@ -113,6 +126,13 @@ export function KanbanBoard({ columns, applications, className }: KanbanBoardPro
         Showing {total} application{total === 1 ? "" : "s"} across {STAGES.length}{" "}
         stages.
       </p>
+
+      <AccreditationDetailDialog
+        accreditationId={detailId}
+        stageId={detailApp ? stageOfStatus(detailApp.status) : undefined}
+        onClose={() => setDetailApp(null)}
+        editChecklist={editChecklist}
+      />
     </div>
   )
 }

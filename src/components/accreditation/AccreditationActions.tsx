@@ -27,6 +27,8 @@ import {
 import { ApiError } from "@/api/client";
 import type { Accreditation, InspectionAccreditor } from "@/api/types";
 import { cn } from "@/lib/utils";
+import { StageStepper, stageOfStatus } from "@/components/kanban/StageStepper";
+import { STAGES, type StageId } from "@/components/kanban/types";
 
 /**
  * The minimal accreditation shape AccreditationActions needs. A full
@@ -82,6 +84,9 @@ export function AccreditationActions({
   const [decisionTrack, setDecisionTrack] = React.useState<Array<"AP" | "CP">>([]);
   const [schedDate, setSchedDate] = React.useState<Record<number, string>>({});
   const [scheduledFor, setScheduledFor] = React.useState<number | null>(null);
+  // Inline two-step confirmation for the irreversible stage-advancing actions,
+  // so a single misclick can't push an application forward unexpectedly.
+  const [confirmKey, setConfirmKey] = React.useState<"complete" | "schedule" | "deliberate" | null>(null);
 
   const a = accreditation;
 
@@ -89,6 +94,7 @@ export function AccreditationActions({
   const primary = (() => {
     if (a.status === "pending")
       return {
+        key: "complete" as const,
         label: "Mark requirements complete",
         icon: <ClipboardCheck />,
         onClick: () => markComplete.mutate(a.id),
@@ -98,6 +104,7 @@ export function AccreditationActions({
       };
     if (a.status === "requirements_completed")
       return {
+        key: "schedule" as const,
         label: "Schedule inspection",
         icon: <CalendarDays />,
         onClick: () =>
@@ -111,6 +118,7 @@ export function AccreditationActions({
       };
     if (a.status === "inspected")
       return {
+        key: "deliberate" as const,
         label: "Start deliberation",
         icon: <Gavel />,
         onClick: () => startDeliberation.mutate(a.id),
@@ -178,18 +186,46 @@ export function AccreditationActions({
           </Button>
         )}
 
-        {/* Stage primary advance action. */}
+        {/* Stage primary advance action. Two-step confirm prevents an
+            accidental stage advance from a single click. */}
         {primary && (
-          <Button
-            size="sm"
-            variant={primary.variant}
-            className="w-full justify-center"
-            disabled={primary.disabled || primary.pending}
-            onClick={primary.onClick}
-          >
-            {primary.pending ? <Loader2 className="animate-spin" /> : primary.icon}
-            {primary.label}
-          </Button>
+          confirmKey === primary.key ? (
+            <div className="flex w-full flex-col gap-1.5">
+              <Button
+                size="sm"
+                variant={primary.variant}
+                className="w-full justify-center"
+                disabled={primary.pending}
+                onClick={() => {
+                  primary.onClick();
+                  setConfirmKey(null);
+                }}
+              >
+                {primary.pending ? <Loader2 className="animate-spin" /> : primary.icon}
+                Confirm: {primary.label}?
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full justify-center"
+                disabled={primary.pending}
+                onClick={() => setConfirmKey(null)}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <Button
+              size="sm"
+              variant={primary.variant}
+              className="w-full justify-center"
+              disabled={primary.disabled || primary.pending}
+              onClick={() => setConfirmKey(primary.key)}
+            >
+              {primary.icon}
+              {primary.label}
+            </Button>
+          )
         )}
 
         {/* Schedule inspection date picker (requirements_completed). */}
@@ -379,14 +415,17 @@ export function AccreditationActions({
 /* Kept here so the action cluster is fully self-contained.            */
 /* ------------------------------------------------------------------ */
 
-function AccreditationDetailDialog({
+export function AccreditationDetailDialog({
   accreditationId,
   onClose,
   editChecklist,
+  stageId,
 }: {
   accreditationId: number | null;
   onClose: () => void;
   editChecklist: ReturnType<typeof useEditChecklist>;
+  /** Optional explicit stage; when omitted it is derived from the loaded detail. */
+  stageId?: StageId;
 }) {
   const open = accreditationId !== null;
   const q = useAdminAccreditationDetail(accreditationId ?? undefined, open);
@@ -414,6 +453,8 @@ function AccreditationDetailDialog({
     (data.accreditation.status === "deliberation" ||
       data.accreditation.status === "inspected");
 
+  const currentStage: StageId | undefined = stageId ?? (data ? stageOfStatus(data.accreditation.status) : undefined);
+
   return (
     <Dialog
       open={open}
@@ -434,6 +475,15 @@ function AccreditationDetailDialog({
             checklist.
           </DialogDescription>
         </DialogHeader>
+
+        {currentStage && (
+          <div className="space-y-2">
+            <StageStepper current={currentStage} />
+            <p className="text-[12px] text-slate-500">
+              {STAGES.find((s) => s.id === currentStage)?.description}
+            </p>
+          </div>
+        )}
 
         {q.isLoading && <Loading label="Loading…" />}
         {q.error && <ErrorState error={q.error} onRetry={q.refetch} />}

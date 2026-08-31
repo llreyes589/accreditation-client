@@ -9,6 +9,8 @@ import {
 interface KanbanCardProps {
   application: KanbanApplication
   className?: string
+  /** Opens the item's detail modal (stage-aware) when the card is activated. */
+  onOpenDetail?: (application: KanbanApplication) => void
 }
 
 /**
@@ -18,9 +20,10 @@ interface KanbanCardProps {
  *
  * When the card carries a live `status` (real backend data), the same
  * decision/checklist action buttons used in the Approvals table are rendered on
- * the card, gated by role + status.
+ * the card, gated by role + status. The whole card is also activatable to open
+ * the stage-aware detail modal.
  */
-export function KanbanCard({ application, className }: KanbanCardProps) {
+export function KanbanCard({ application, className, onOpenDetail }: KanbanCardProps) {
   const isLive = application.status != null
 
   // Minimal accreditation shape the action cluster needs (id + status + a few
@@ -40,15 +43,22 @@ export function KanbanCard({ application, className }: KanbanCardProps) {
         className,
       )}
     >
-      {/* Application ID — the primary identifier. */}
-      <p className="font-mono text-[11px] font-semibold uppercase tracking-wide text-sky-700">
-        {application.id}
-      </p>
+      {/* Application ID — the primary identifier. Clickable to open the detail modal. */}
+      <button
+        type="button"
+        className="block w-full text-left"
+        onClick={() => onOpenDetail?.(application)}
+        title="View details"
+      >
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-wide text-sky-700">
+          {application.id}
+        </p>
 
-      {/* Applicant name — always present (acceptance criterion). */}
-      <p className="mt-0.5 truncate text-sm font-medium text-slate-800">
-        {application.applicantName}
-      </p>
+        {/* Applicant name — always present (acceptance criterion). */}
+        <p className="mt-0.5 truncate text-sm font-medium text-slate-800">
+          {application.applicantName}
+        </p>
+      </button>
 
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
         <span className="inline-flex items-center gap-1">
